@@ -1,0 +1,25 @@
+/*backtest
+start: 2023-08-21 00:00:00
+end: 2023-09-20 00:00:00
+period: 1h
+basePeriod: 15m
+exchanges: [{"eid":"Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=2
+// strategy("Tester", pyramiding = 50, default_qty_type = strategy.cash, default_qty_value = 20, initial_capital = 2000, commission_type = strategy.commission.percent, commission_value = 0.25)
+
+minGainPercent = input(0.6)
+gainMultiplier = minGainPercent * 0.01 + 1
+
+
+longCondition = crossover(sma(close, 14), sma(close, 28))
+shortCondition = crossunder(sma(close, 14), sma(close, 28))
+
+
+avg_protection = input(1)
+gain_protection = input(1)
+
+
+strategy.entry("Buy", strategy.long, when = longCondition    and (avg_protection >= 1 ? (na(strategy.position_avg_price) ? true : close <= strategy.position_avg_price) : true))
+strategy.close_all(when = shortCondition  and (gain_protection >=1 ? (close >= gainMultiplier * strategy.position_avg_price) : true))

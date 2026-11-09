@@ -1,0 +1,51 @@
+/*backtest
+start: 2024-04-01 00:00:00
+end: 2024-04-30 23:59:59
+period: 2h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("Enhanced Moving Average Crossover Strategy", overlay=true)
+
+// Input parameters
+fastLength = input(10, title="Fast MA Length")
+slowLength = input(50, title="Slow MA Length")
+atrLength = input(14, title="ATR Length")
+riskPerTrade = input(1, title="Risk Per Trade (%)") / 100
+
+// Time-based conditions
+isLondonSession = hour >= 8 and hour <= 15
+isAsianSession = hour >= 0 and hour <= 7
+isEuropeanSession = hour >= 7 and hour <= 14
+
+// Moving Averages
+fastMA = ta.sma(close, fastLength)
+slowMA = ta.sma(close, slowLength)
+
+// Average True Range (ATR) for dynamic stop loss and take profit
+atr = ta.atr(atrLength)
+
+// Buy and Sell Conditions
+buySignal = ta.crossover(fastMA, slowMA)
+sellSignal = ta.crossunder(fastMA, slowMA)
+
+// Dynamic stop loss and take profit
+stopLoss = close - atr * 1.5
+takeProfit = close + atr * 3
+
+// Strategy Logic
+if (buySignal and isEuropeanSession)
+    strategy.entry("Buy", strategy.long)
+    strategy.exit("Take Profit/Stop Loss", "Buy", limit=takeProfit, stop=stopLoss)
+
+if (sellSignal and isEuropeanSession)
+    strategy.entry("Sell", strategy.short)
+    strategy.exit("Take Profit/Stop Loss", "Sell", limit=takeProfit, stop=stopLoss)
+
+// Plotting
+plot(fastMA, color=color.blue, title="Fast MA")
+plot(slowMA, color=color.red, title="Slow MA")
+plotshape(series=buySignal, location=location.belowbar, color=color.green, style=shape.labelup, text="BUY")
+plotshape(series=sellSignal, location=location.abovebar, color=color.red, style=shape.labeldown, text="SELL")

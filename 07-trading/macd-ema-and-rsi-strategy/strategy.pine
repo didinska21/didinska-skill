@@ -1,0 +1,54 @@
+/*backtest
+start: 2023-12-01 00:00:00
+end: 2023-12-31 23:59:59
+period: 1h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("MACD, EMA, and RSI Strategy", overlay=true)
+
+// Input for MACD
+fastLength = input(5, title="Fast Length")
+slowLength = input(13, title="Slow Length")
+signalLength = input(9, title="Signal Length")
+
+// Input for EMA
+emaLength = input(21, title="EMA Length")
+
+// Input for RSI
+rsiLength = input(14, title="RSI Length")
+rsiOverbought = input(50, title="RSI Overbought Level")
+
+// Calculate MACD on the weekly timeframe
+[macdLine, signalLine, _] = ta.macd(close, fastLength, slowLength, signalLength)
+
+// Calculate 50-day EMA
+ema50 = ta.ema(close, emaLength)
+
+// Calculate RSI on the weekly timeframe
+rsi = ta.rsi(close, rsiLength)
+
+// Condition for Buy Entry
+buyCondition = ta.crossover(macdLine, 0) and dayofweek == dayofweek.monday and rsi > rsiOverbought
+
+// Condition for Sell Exit
+sellCondition = ta.crossunder(close, ema50) or ta.crossunder(macdLine, 0)
+
+// Execute Buy Entry on the next day's open
+if buyCondition
+    strategy.entry("My Long Entry Id", strategy.long)
+
+// Execute Sell Exit on the next day's open
+if sellCondition
+    strategy.close("My Long Entry Id")
+
+// Plotting MACD and EMA
+plot(macdLine - signalLine, title="MACD Histogram", color=color.blue, style=plot.style_histogram)
+hline(0, "Zero Line", color=color.gray)
+plot(ema50, title="50-day EMA", color=color.red)
+
+// Plotting RSI
+hline(rsiOverbought, "RSI Overbought", color=color.red)
+plot(rsi, title="RSI", color=color.green)

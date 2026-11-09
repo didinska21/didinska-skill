@@ -1,0 +1,41 @@
+/*backtest
+start: 2024-10-01 00:00:00
+end: 2024-10-31 23:59:59
+period: 1h
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("Estrategia BTC/USDT - Ajustada", overlay=true)
+
+// Definición de las EMAs
+emaRapida = ta.ema(close, 9)
+emaLenta = ta.ema(close, 21)
+
+// Cálculo del RSI
+rsi = ta.rsi(close, 14)
+
+// Condiciones de compra y venta
+longCondition = ta.crossover(emaRapida, emaLenta) and rsi < 70
+shortCondition = ta.crossunder(emaRapida, emaLenta) and rsi > 30
+
+// Ajustes de Take Profit y Stop Loss
+takeProfitLong = close * 1.015 // Take Profit del 1.5% para Long
+stopLossLong = close * 0.99 // Stop Loss del 1% para Long
+
+takeProfitShort = close * 0.985 // Take Profit del 1.5% para Short
+stopLossShort = close * 1.01 // Stop Loss del 1% para Short
+
+// Ejecución de la estrategia
+if (longCondition)
+    strategy.entry("Compra", strategy.long)
+    strategy.exit("Take Profit Long", "Compra", limit=takeProfitLong, stop=stopLossLong)
+
+if (shortCondition)
+    strategy.entry("Venta", strategy.short)
+    strategy.exit("Take Profit Short", "Venta", limit=takeProfitShort, stop=stopLossShort)
+
+// Visualización de las EMAs
+plot(emaRapida, color=color.green, linewidth=2, title="EMA Rápida")
+plot(emaLenta, color=color.red, linewidth=2, title="EMA Lenta")

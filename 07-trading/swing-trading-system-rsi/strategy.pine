@@ -1,0 +1,39 @@
+/*backtest
+start: 2023-02-05 00:00:00
+end: 2024-01-18 05:20:00
+period: 2d
+basePeriod: 1d
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=4
+//A translation from info found at http://backtestwizard.com/swing-trading-system-for-stocks/
+strategy("Swing Trading System RSI", overlay=true)
+source = close[1]
+
+longperiod = input(26,"long week",minval=2,maxval=500,step=1)
+s = request.security(syminfo.tickerid, "W", sma(close[1], longperiod)) // 1 Day
+plot(s)
+
+shortdays = input(21,"short days high period",minval=2,maxval=500,step=1)
+longdays = input(50,"long days high period",minval=2,maxval=500,step=1)
+rsiperiod = input(4,"rsi period",minval=2,maxval=500,step=1)
+rsithresh = input(30,"rsi thresh",minval=2,maxval=500,step=1)
+
+highcheck = highest(source,shortdays) == highest(source,longdays)
+rsicheck = crossunder(rsi(source,rsiperiod),rsithresh)
+
+longCondition = (highcheck) and (rsicheck) and source > s
+if (longCondition)
+    strategy.entry("My Long Entry Id", strategy.long)
+
+profittarget = input(3,"profit target",minval=2,maxval=500,step=1)
+stoploss = input(2,"stop target",minval=2,maxval=500,step=1)
+
+exitCondition1 = source > strategy.position_avg_price + (atr(50) * profittarget)
+exitCondition2 = source <  strategy.position_avg_price - (atr(50) * stoploss)
+
+if (exitCondition1)
+    strategy.close_all()
+if (exitCondition2)
+    strategy.close_all()

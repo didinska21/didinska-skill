@@ -1,0 +1,58 @@
+/*backtest
+start: 2019-12-23 08:00:00
+end: 2025-01-15 08:00:00
+period: 1d
+basePeriod: 1d
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT","balance":49999}]
+*/
+
+//@version=5
+strategy("Daily Strategy with Triple EMA, DMI, DPO, RSI, and ATR", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// Input parameters
+fastEmaLength = input.int(10, title="Fast EMA Length")
+mediumEmaLength = input.int(25, title="Medium EMA Length")
+slowEmaLength = input.int(50, title="Slow EMA Length")
+dmiLength = input.int(14, title="DMI Length")
+adxSmoothing = input.int(14, title="ADX Smoothing")
+dpoLength = input.int(14, title="DPO Length")
+rsiLength = input.int(14, title="RSI Length")
+atrLength = input.int(14, title="ATR Length")
+riskPercentage = input.float(2.0, title="Risk Percentage", step=0.1)
+atrMultiplier = input.float(1.5, title="ATR Multiplier for Stop Loss", step=0.1)
+tpMultiplier = input.float(2.0, title="ATR Multiplier for Take Profit", step=0.1)
+
+// Calculate EMAs
+fastEma = ta.ema(close, fastEmaLength)
+mediumEma = ta.ema(close, mediumEmaLength)
+slowEma = ta.ema(close, slowEmaLength)
+
+// Calculate other indicators
+[adx, diPlus, diMinus] = ta.dmi(dmiLength, adxSmoothing)
+dpo = close - ta.sma(close, dpoLength)
+rsi = ta.rsi(close, rsiLength)
+atr = ta.atr(atrLength)
+
+// Trading logic
+longCondition = ta.crossover(fastEma, mediumEma) and fastEma > slowEma and mediumEma > slowEma and adx > 25 and rsi > 50 and dpo > 0
+shortCondition = ta.crossunder(fastEma, mediumEma) and fastEma < slowEma and mediumEma < slowEma and adx > 25 and rsi < 50 and dpo < 0
+
+// Risk management
+riskAmount = (strategy.equity * riskPercentage) / 100
+stopLoss = atr * atrMultiplier
+takeProfit = atr * tpMultiplier
+
+// Entry and exit logic
+if (longCondition)
+    strategy.entry("Buy", strategy.long)
+    strategy.exit("Exit Long", "Buy", stop=close - stopLoss, limit=close + takeProfit)
+
+if (shortCondition)
+    strategy.entry("Sell", strategy.short)
+    strategy.exit("Exit Short", "Sell", stop=close + stopLoss, limit=close - takeProfit)
+
+// Plot indicators
+plot(fastEma, color=color.green, title="Fast EMA")
+plot(mediumEma, color=color.orange, title="Medium EMA")
+plot(slowEma, color=color.red, title="Slow EMA")
+hline(25, "ADX Threshold", color=color.gray, linestyle=hline.style_dotted)

@@ -1,0 +1,40 @@
+/*backtest
+start: 2019-12-23 08:00:00
+end: 2024-12-04 00:00:00
+period: 1d
+basePeriod: 1d
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("EMA Crossover Strategy with Buttons", overlay=true)
+
+// Input parameters for EMAs
+shortEmaLength = input(9, title="Short EMA Length")
+longEmaLength = input(20, title="Long EMA Length")
+
+// Calculate EMAs
+shortEma = ta.ema(close, shortEmaLength)
+longEma = ta.ema(close, longEmaLength)
+
+// Plot EMAs
+plot(shortEma, color=color.blue, title="9 EMA")
+plot(longEma, color=color.red, title="20 EMA")
+
+// Buy and Sell Logic
+longCondition = ta.crossover(shortEma, longEma)
+shortCondition = ta.crossunder(shortEma, longEma)
+
+// Buy Button
+if (ta.change(longCondition))
+    if (longCondition)
+        strategy.entry("Buy", strategy.long)
+
+// Sell Button
+if (ta.change(shortCondition))
+    if (shortCondition)
+        strategy.entry("Sell", strategy.short)
+
+// Alert Conditions
+alertcondition(longCondition, title="Buy Alert", message="Buy Signal")
+alertcondition(shortCondition, title="Sell Alert", message="Sell Signal")

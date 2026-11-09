@@ -1,0 +1,39 @@
+/*backtest
+start: 2022-11-29 00:00:00
+end: 2023-12-05 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=4
+strategy("Manham Big Bar Trading Strategy", overlay=true)
+
+// Define inputs
+lookback_period = input(20, title="Lookback Period")
+bullish_threshold = input(26, title="Bullish Marubozu Threshold")
+bearish_threshold = input(30, title="Bearish Marubozu Threshold")
+target_points = input(37, title="Target Points")
+stop_loss_points = input(24, title="Stop Loss Points")
+
+// Calculate body size as a percentage of the total range of the candle
+body_size = abs(close - open) / (high - low) * 30
+
+// Identify bullish Marubozu
+is_bullish_marubozu = close > open and body_size >= bullish_threshold
+
+// Identify bearish Marubozu
+is_bearish_marubozu = open > close and body_size >= bearish_threshold
+
+// Calculate stop loss and target levels
+stop_loss = strategy.position_avg_price - stop_loss_points * syminfo.mintick
+take_profit = strategy.position_avg_price + target_points * syminfo.mintick
+
+// Strategy conditions
+if is_bullish_marubozu
+    strategy.entry("Buy", strategy.long)
+    strategy.exit("Sell", "Buy", stop=stop_loss, limit=take_profit)
+
+if is_bearish_marubozu
+    strategy.entry("Sell", strategy.short)
+    strategy.exit("Cover", "Sell", stop=take_profit, limit=stop_loss)

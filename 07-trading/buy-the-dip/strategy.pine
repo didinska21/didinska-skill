@@ -1,0 +1,17 @@
+//@version=3
+strategy(title="Buy The Dip", shorttitle="BTFD", overlay=true)
+dipness = input(title="Dipness",defval=2)
+smoothness = input(title="Smoothing",defval=10,minval=0)
+lookforward = input(title="Exit After This Many Bars", defval=20)
+
+thedip = low - (atr(20) * dipness)
+thedipsma = sma(thedip,smoothness)
+
+buyCondition = crossunder(low,thedipsma)
+
+if (buyCondition)
+    strategy.entry("long", strategy.long)
+    
+strategy.close("long",when=buyCondition[20]) 
+
+plot(thedipsma)

@@ -1,0 +1,44 @@
+/*backtest
+start: 2023-05-22 00:00:00
+end: 2024-05-27 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © anshchaubey1373
+
+//@version=5
+strategy("EMA Crossover Strategy", overlay=true)
+
+// Define the EMA lengths
+shortEmaLength = 10
+longEmaLength = 21
+
+// Calculate the EMAs
+shortEma = ta.ema(close, shortEmaLength)
+longEma = ta.ema(close, longEmaLength)
+
+// Plot the EMAs
+plot(shortEma, title="10 EMA", color=color.blue)
+plot(longEma, title="21 EMA", color=color.red)
+
+// Generate buy and sell signals
+longCondition = ta.crossover(shortEma, longEma)
+shortCondition = ta.crossunder(shortEma, longEma)
+
+// Delay the signal by one bar
+longSignal = ta.valuewhen(longCondition, close, 1)
+shortSignal = ta.valuewhen(shortCondition, close, 1)
+
+// Plot buy and sell signals
+plotshape(series=longCondition[1], location=location.belowbar, color=color.green, style=shape.labelup, text="BUY")
+plotshape(series=shortCondition[1], location=location.abovebar, color=color.red, style=shape.labeldown, text="SELL")
+
+// Strategy logic for entering positions
+if (longCondition[1])
+    strategy.entry("Long", strategy.long)
+
+if (shortCondition[1])
+    strategy.entry("Short", strategy.short)

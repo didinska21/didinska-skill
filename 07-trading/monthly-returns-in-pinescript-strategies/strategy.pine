@@ -1,0 +1,40 @@
+/*backtest
+start: 2021-05-05 00:00:00
+end: 2022-05-04 23:59:00
+period: 12h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=4
+//strategy("Monthly Returns in PineScript Strategies", overlay = true, default_qty_type = strategy.percent_of_equity, default_qty_value = 25, calc_on_every_tick = true, commission_type = strategy.commission.percent, commission_value = 0.1)
+
+// Inputs 
+leftBars  = input(2,"leftBars")
+rightBars = input(2,"rightBars")
+prec      = input(2, title = "Return Precision")
+
+// Pivot Points 
+swh = pivothigh(leftBars, rightBars)
+swl = pivotlow(leftBars, rightBars)
+
+hprice = 0.0
+hprice := not na(swh) ? swh : hprice[1]
+
+lprice = 0.0
+lprice := not na(swl) ? swl : lprice[1]
+
+le = false
+le := not na(swh) ? true : (le[1] and high > hprice ? false : le[1])
+
+se = false
+se := not na(swl) ? true : (se[1] and low < lprice ? false : se[1])
+
+if (le)
+	strategy.entry("PivRevLE", strategy.long, comment="PivRevLE")
+
+if (se)
+	strategy.entry("PivRevSE", strategy.short, comment="PivRevSE")
+
+plot(hprice, color = color.green, linewidth = 2)
+plot(lprice, color = color.red,   linewidth = 2)

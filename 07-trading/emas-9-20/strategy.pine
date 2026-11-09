@@ -1,0 +1,53 @@
+/*backtest
+start: 2023-03-02 00:00:00
+end: 2024-03-07 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+
+//@version=5
+strategy(title = "EMAs 9 / 20",
+		 shorttitle = '9/20 EMAs', 
+		 initial_capital = 1000,
+		 overlay = true, 
+		 default_qty_type = strategy.fixed,
+		 commission_type = strategy.commission.cash_per_contract,
+		 commission_value = 0.35,
+		 default_qty_value = 1)
+
+
+int trailOffset = 10
+int trailPoints = 15
+
+
+series float oEma9 = ta.ema(ohlc4, 9)
+series float oEma20 = ta.ema(ohlc4, 20)
+
+series bool closeCrossoverEma9 = ta.crossover(close, oEma9)
+series bool closeCrossunderEma9 = ta.crossover(close, oEma9)
+
+series bool nineCrossover20 = ta.crossover(oEma9, oEma20)
+series bool nineCrossunder20 = ta.crossunder(oEma9, oEma20)
+
+//Entry Exits
+
+if nineCrossover20
+    strategy.entry("Long 9Cross20", strategy.long, 2)
+else if closeCrossoverEma9
+    strategy.entry("Long 9CrossClose", strategy.long, 2)
+    strategy.exit("Long 9CrossClose Exit", from_entry = "Long 9CrossClose", trail_points = trailPoints, trail_offset = trailOffset)
+else if nineCrossunder20
+    strategy.close("Long 9Cross20")
+    
+    
+
+if nineCrossunder20
+    strategy.entry("Short 9Cross20", strategy.short, 2)
+else if closeCrossunderEma9
+    strategy.entry("Short 9CrossClose", strategy.short, 2)
+    strategy.exit("Short 9CrossClose Exit", from_entry = "Short 9CrossClose", trail_points = trailPoints, trail_offset = trailOffset)
+else if nineCrossover20
+    strategy.close("Short 9Cross20")
+    

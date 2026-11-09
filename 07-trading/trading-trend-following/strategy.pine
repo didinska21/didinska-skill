@@ -1,0 +1,49 @@
+/*backtest
+start: 2023-01-08 00:00:00
+end: 2024-01-14 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=4
+strategy("Trading Trend Following", overlay=true)
+
+// Define EMA parameters
+emaLengthShort = input(50, title="Short EaMA Length")
+emaLengthLong = input(200, title="Long EMA Length")
+ema50 = ema(close, emaLengthShort)
+ema200 = ema(close, emaLengthLong)
+
+// Calculate RSI
+rsiLength = input(14, title="RSI Length")
+rsiValue = rsi(close, rsiLength)
+
+// Define Demand and Supply zones
+demandZone = input(true, title="Demand Zone")
+supplyZone = input(true, title="Supply Zone")
+
+// Define Buy and Sell conditions
+buyCondition = crossover(ema50, ema200) and close > ema50 and rsiValue > 55
+sellCondition = crossunder(ema50, ema200) and close < ema50 and rsiValue < 45
+
+// Entry point buy when the price is closed above Demand and EMA gives a buy signal
+buyEntryCondition = close > ema50 and demandZone
+strategy.entry("Buy", strategy.long, when=buyCondition and buyEntryCondition)
+
+// Entry point sell when the price is closed below Supply and EMA gives a sell signal
+sellEntryCondition = close < ema50 and supplyZone
+strategy.entry("Sell", strategy.short, when=sellCondition and sellEntryCondition)
+
+// Plot EMAs for visualization
+plot(ema50, color=color.blue, title="Short EMA")
+plot(ema200, color=color.red, title="Long EMA")
+
+// Plot RSI for visualization
+hline(55, "Overbought", color=color.red)
+hline(45, "Oversold", color=color.green)
+plot(rsiValue, color=color.purple, title="RSI")
+
+// Plot Demand and Supply zones
+bgcolor(demandZone ? color.new(color.green, 90) : na)
+bgcolor(supplyZone ? color.new(color.red, 90) : na)

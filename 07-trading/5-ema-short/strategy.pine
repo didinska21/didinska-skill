@@ -1,0 +1,48 @@
+/*backtest
+start: 2024-05-28 00:00:00
+end: 2024-06-27 00:00:00
+period: 2h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("5 EMA Short", overlay=true)
+
+// Input
+emaLength = input.int(5, "EMA Length", minval=1)
+riskRewardRatio = input.float(3.0, "Risk-Reward Ratio", minval=1.0, step=0.1)
+
+// Calculate 5 EMA
+ema5 = ta.ema(close, emaLength)
+
+// Identify alert candle
+isAlertCandle = low > ema5 and low[1] > ema5[1]
+
+// Entry condition
+entryCondition = isAlertCandle[1] and low <= low[1]
+
+// Calculate stop loss and take profit
+stopLoss = high[1]
+entryPrice = low[1]  // Entry price is the low of the alert candle
+target = entryPrice - (stopLoss - entryPrice) * riskRewardRatio
+
+// Variables to store trade information
+var float tradeEntry = na
+var float tradeSL = na
+var float tradeTarget = na
+
+// Execute strategy and store trade information
+if (entryCondition)
+    strategy.entry("Short", strategy.short, stop=stopLoss, limit=target)
+    tradeEntry := entryPrice
+    tradeSL := stopLoss
+    tradeTarget := target
+
+// Plot 5 EMA
+plot(ema5, color=color.blue, linewidth=1, title="5 EMA")
+
+// Plot entry, stop loss, and target only when a trade is triggered
+plotshape(series=tradeEntry, title="Entry", location=location.absolute, color=color.yellow, style=shape.circle, size=size.tiny)
+plotshape(series=tradeSL, title="Stop Loss", location=location.absolute, color=color.red, style=shape.circle, size=size.tiny)
+plotshape(series=tradeTarget, title="Target", location=location.absolute, color=color.green, style=shape.circle, size=size.tiny)

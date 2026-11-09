@@ -1,0 +1,36 @@
+/*backtest
+start: 2023-11-29 00:00:00
+end: 2023-12-06 00:00:00
+period: 1m
+basePeriod: 1m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © SDTA
+
+//@version=5
+strategy("EMA Crossover Strategy", overlay=true)
+
+// Hareketli Ortalamaları Hesapla
+ema50 = ta.ema(close, 50)
+ema144 = ta.ema(close, 144)
+ema200 = ta.ema(close, 200)
+
+// Al sinyali koşulu: Fiyat EMA 50, EMA 144 ve EMA 200 üzerine çıktığında
+longCondition = close > ema50 and close > ema144 and close > ema200
+
+// Sat sinyali koşulu: Fiyat EMA 200, EMA 144 ve EMA 50 altına indiğinde
+shortCondition = close < ema200 and close < ema144 and close < ema50
+
+// Al ve Sat sinyallerinin gerçekleştiği çubuğu ok ile belirt
+plotarrow(series=longCondition ? 1 : shortCondition ? -1 : na, colorup=color.green, colordown=color.red, offset=-1, title="Trade Arrow")
+
+// Hareketli Ortalamaları Çiz
+plot(ema50, color=color.blue, title="EMA 50")
+plot(ema144, color=color.orange, title="EMA 144")
+plot(ema200, color=color.red, title="EMA 200")
+
+// Strateji testi ekleyin
+strategy.entry("AL", strategy.long, when=longCondition)
+strategy.entry("SAT", strategy.short, when=shortCondition)

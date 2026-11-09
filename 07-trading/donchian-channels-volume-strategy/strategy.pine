@@ -1,0 +1,71 @@
+/*backtest
+start: 2024-02-10 00:00:00
+end: 2025-02-08 08:00:00
+period: 3h
+basePeriod: 3h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("Donchian Channels + Volume Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// === Vstupy ===
+donchianPeriod = input.int(20, title="Donchian Period", minval=1)
+volumePeriod = input.int(20, title="Volume SMA Period", minval=1)
+
+// === Výpočty Indikátorov ===
+// Donchian Channels z predchádzajúceho baru
+upperDonchianPrev = ta.highest(high, donchianPeriod)[1]
+lowerDonchianPrev = ta.lowest(low, donchianPeriod)[1]
+
+// Aktuálne Donchian Channels
+upperDonchian = ta.highest(high, donchianPeriod)
+lowerDonchian = ta.lowest(low, donchianPeriod)
+
+// Volume SMA
+avgVolume = ta.sma(volume, volumePeriod)
+
+// === Podmienky Pre Vstupy ===
+// Long Condition: Close prekoná predchádzajúce Upper Donchian a objem > priemerný objem
+longCondition = ta.crossover(close, upperDonchianPrev) and volume > avgVolume
+
+// Short Condition: Close prekoná predchádzajúce Lower Donchian a objem > priemerný objem
+shortCondition = ta.crossunder(close, lowerDonchianPrev) and volume > avgVolume
+
+// === Vstupné Signály ===
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+
+// === Výstupné Podmienky ===
+// Uzavretie Long pozície pri prekonaní aktuálneho Lower Donchian
+exitLongCondition = ta.crossunder(close, lowerDonchian)
+
+if (exitLongCondition)
+    strategy.close("Long")
+
+// Uzavretie Short pozície pri prekonaní aktuálneho Upper Donchian
+exitShortCondition = ta.crossover(close, upperDonchian)
+
+if (exitShortCondition)
+    strategy.close("Short")
+
+// === Vykreslenie Indikátorov na Grafe ===
+// Vykreslenie Donchian Channels
+upperPlot = plot(upperDonchian, color=color.red, title="Upper Donchian")
+lowerPlot = plot(lowerDonchian, color=color.green, title="Lower Donchian")
+fill(upperPlot, lowerPlot, color=color.rgb(173, 216, 230, 90), title="Donchian Fill")
+
+// Vykreslenie Volume SMA (skryté)
+plot(avgVolume, color=color.blue, title="Average Volume", display=display.none)
+
+// === Vizualizácia Signálov ===
+// Značky pre Long a Short vstupy
+plotshape(series=longCondition, title="Long Entry", location=location.belowbar, color=color.green, style=shape.labelup, text="Long")
+plotshape(series=shortCondition, title="Short Entry", location=location.abovebar, color=color.red, style=shape.labeldown, text="Short")
+
+// Značky pre Long a Short výstupy
+plotshape(series=exitLongCondition, title="Long Exit", location=location.abovebar, color=color.red, style=shape.labeldown, text="Exit Long")
+plotshape(series=exitShortCondition, title="Short Exit", location=location.belowbar, color=color.green, style=shape.labelup, text="Exit Short")

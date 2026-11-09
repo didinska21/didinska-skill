@@ -1,0 +1,66 @@
+name: Aero scan
+
+on:
+  schedule:
+    # Hourly, at :47 rather than on the hour (see snapshot.yml). An sAERO stake can
+    # move every 47 h and pools fill up within hours, so the 4-hourly snapshot
+    # left the ranking stale. GitHub starts scheduled runs hours late (3–5 h apart
+    # in practice), so each run also queues the next one itself (last step); this
+    # cron only restarts that chain if it breaks.
+    - cron: "47 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: v3
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  v3:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: "npm"
+
+      - run: npm ci
+
+      # Aero's seven networks (src/v3-cli.ts); a network that fails is recorded in the
+      # file and the others still publish.
+      - name: Scan Aero (v3)
+        run: npm run v3scan
+
+      - name: Commit the scan if it changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/data/v3.json docs/data/v3-history.json docs/data/top-allocators.json docs/llms.txt
+          if git diff --cached --quiet; then
+            echo "v3 unchanged — nothing to commit"
+            exit 0
+          fi
+          git commit -m "Refresh the Aero scan"
+          # The snapshot workflow and the daily routine push to the same branch.
+          git pull --rebase
+          git push
+
+      # Wait for the next :47 and start the next scan. A dispatch from GITHUB_TOKEN
+      # does start a run; the concurrency group keeps one running and one waiting,
+      # so a late scheduled run and this one never pile up.
+      - name: Queue the next scan
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          now=$(date +%s)
+          wait=$(( (47 * 60 - now % 3600 + 7200) % 3600 ))
+          [ "$wait" -lt 300 ] && wait=$(( wait + 3600 ))
+          echo "next scan in $(( wait / 60 )) min"
+          sleep "$wait"
+          gh workflow run v3.yml -R "${{ github.repository }}" --ref "${{ github.ref_name }}"

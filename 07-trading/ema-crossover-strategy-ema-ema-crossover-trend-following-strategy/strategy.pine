@@ -1,0 +1,35 @@
+/*backtest
+start: 2023-01-25 00:00:00
+end: 2024-01-31 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=4
+strategy("EMA Crossover Strategy", overlay=true)
+
+// Input parameters
+shortPeriod = input(9, title="Short EMA Period")
+longPeriod = input(21, title="Long EMA Period")
+stopLossPercent = input(1, title="Stop Loss (%)") / 100
+takeProfitMultiplier = input(2, title="Take Profit Multiplier")
+
+// Calculate EMAs
+emaShort = ema(close, shortPeriod)
+emaLong = ema(close, longPeriod)
+
+// Plot EMAs
+plot(emaShort, color=color.blue, title="Short EMA")
+plot(emaLong, color=color.red, title="Long EMA")
+
+// Strategy logic
+strategy.entry("Buy", strategy.long, when=crossover(emaShort, emaLong))
+strategy.close("Buy", when=crossunder(emaShort, emaLong))
+
+// Risk management
+atrValue = atr(14)
+stopLossLevel = close * (1 - stopLossPercent)
+takeProfitLevel = close * takeProfitMultiplier
+
+strategy.exit("Take Profit/Stop Loss", from_entry="Buy", loss=stopLossLevel, profit=takeProfitLevel)

@@ -1,0 +1,36 @@
+/*backtest
+start: 2022-04-09 00:00:00
+end: 2022-05-08 23:59:00
+period: 30m
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © AstrideUnicorn
+
+//@version=5
+indicator("Momentum 2.0", overlay = false)
+
+source = close
+
+// Script Inputs 
+window = input(defval=15, title="Oscillator Period")
+base_level_window = input.int(defval=450, title="Base Level Period", minval=300)
+
+// Calculate normalized and smoothed momentum oscillator
+momentum = ta.mom(source, window) 
+momentum_normalized = ( momentum ) / ta.stdev(momentum, base_level_window)
+momentum_smoothed = ta.linreg(momentum_normalized, 30,0)
+
+// Calculated the base-level
+momentum_base = -ta.ema(momentum_normalized,base_level_window)
+
+// Calculate base-level cross signals
+bullish = ta.crossover(momentum_smoothed, momentum_base)  
+bearish = ta.crossunder(momentum_smoothed, momentum_base) 
+
+if bullish
+    strategy.entry("Enter Long", strategy.long)
+else if bearish
+    strategy.entry("Enter Short", strategy.short)

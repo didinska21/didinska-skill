@@ -1,0 +1,26 @@
+/*backtest
+start: 2022-09-01 00:00:00
+end: 2023-09-07 00:00:00
+period: 4h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+// © dragolite95
+//@version=5
+strategy("Simple EMA20 Strat", overlay=true, margin_long=100, margin_short=100)
+
+periodK = input.int(14, title="%K Length", minval=1)
+smoothK = input.int(1, title="%K Smoothing", minval=1)
+periodD = input.int(3, title="%D Smoothing", minval=1)
+k = ta.sma(ta.stoch(close, high, low, periodK), smoothK)
+d = ta.sma(k, periodD)
+
+ema = ta.ema(close, 20)
+
+plot(series=ema, title="ema 20", color=color.blue)
+
+if(low > ema and k > d and ema > ema[20])
+    strategy.entry("long", strategy.long)
+if(close < ema)
+    strategy.close("long")

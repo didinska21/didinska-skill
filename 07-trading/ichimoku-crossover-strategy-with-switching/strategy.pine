@@ -1,0 +1,48 @@
+/*backtest
+start: 2024-02-19 00:00:00
+end: 2025-02-16 08:00:00
+period: 4h
+basePeriod: 4h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © pyoungil0842
+
+//@version=6
+
+strategy("Ichimoku Crossover Strategy with Switching", overlay=true)
+
+// 일목균형표의 요소 계산
+tenkanLength = input(9, title="전환선 기간")
+kijunLength = input(26, title="기준선 기간")
+
+tenkan = ta.sma(ta.highest(high, tenkanLength) + ta.lowest(low, tenkanLength), 2)
+kijun = ta.sma(ta.highest(high, kijunLength) + ta.lowest(low, kijunLength), 2)
+
+// 현재 캔들에서 교차 신호 확인
+goldenCross = (tenkan > kijun) and (tenkan[1] <= kijun[1]) // 전환선이 기준선을 상향 돌파
+deadCross = (tenkan < kijun) and (tenkan[1] >= kijun[1]) // 전환선이 기준선을 하향 돌파
+
+// 현재 포지션 상태
+isLong = strategy.position_size > 0  // 롱 포지션 여부
+isShort = strategy.position_size < 0 // 숏 포지션 여부
+
+// 전략 매수/매도 조건
+if (goldenCross)
+    if (isShort) // 숏 포지션이 있을 경우 스위칭
+        strategy.close("Short")
+        strategy.entry("Long", strategy.long)
+    else if (strategy.position_size == 0) // 포지션이 없을 경우 신규 진입
+        strategy.entry("Long", strategy.long)
+
+if (deadCross)
+    if (isLong) // 롱 포지션이 있을 경우 스위칭
+        strategy.close("Long")
+        strategy.entry("Short", strategy.short)
+    else if (strategy.position_size == 0) // 포지션이 없을 경우 신규 진입
+        strategy.entry("Short", strategy.short)
+
+// 차트에 전환선과 기준선 표시
+plot(tenkan, color=color.blue, title="전환선")
+plot(kijun, color=color.red, title="기준선")

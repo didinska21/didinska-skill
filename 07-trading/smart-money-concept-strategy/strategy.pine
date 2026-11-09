@@ -1,0 +1,33 @@
+/*backtest
+start: 2023-12-01 00:00:00
+end: 2023-12-18 23:59:59
+period: 1h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("Smart Money Concept Strategy", overlay=true)
+
+// Smart Money Concept: On-Balance Volume (OBV)
+obv_value = request.security(syminfo.tickerid, "D", close)
+obv_slope = obv_value - obv_value[1]
+
+// Define conditions for smart money accumulation/distribution
+smart_money_buy_condition = obv_slope > 0
+smart_money_sell_condition = obv_slope < 0
+
+// Plot signals
+plotshape(series=smart_money_buy_condition, title="Buy Signal", color=color.green, style=shape.labelup, location=location.belowbar)
+plotshape(series=smart_money_sell_condition, title="Sell Signal", color=color.red, style=shape.labeldown, location=location.abovebar)
+
+// Strategy Logic
+if (smart_money_buy_condition)
+    strategy.entry("Long", strategy.long)
+
+if (smart_money_sell_condition)
+    strategy.entry("Short", strategy.short)
+
+// Strategy Exit Logic
+strategy.close("ExitLong")
+strategy.close("ExitShort")

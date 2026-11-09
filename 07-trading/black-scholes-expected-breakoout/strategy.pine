@@ -1,0 +1,53 @@
+/*backtest
+start: 2025-01-01 00:00:00
+end: 2025-03-25 00:00:00
+period: 1d
+basePeriod: 1d
+exchanges: [{"eid":"Futures_Binance","currency":"ETH_USDT"}]
+*/
+
+//@version=5
+strategy("black-scholes expected breakoout", overlay=true, initial_capital=100000, currency=currency.USD, calc_on_order_fills=true, calc_on_every_tick=true)
+
+// User Inputs
+chartRes     = input.int(title="Chart Timeframe in Minutes", defval=1, minval=1)
+volLookback  = input.int(title="Volatility Lookback (bars)", defval=20, minval=1)
+stopLossPerc = input.float(title="Stop Loss (%)", defval=1.0, minval=0.1, step=0.1)
+takeProfitPerc = input.float(title="Take Profit (%)", defval=2.0, minval=0.1, step=0.1)
+
+// Calculate periods per year based on chart timeframe (252 trading days * 390 minutes per day)
+periodsPerYear = (252 * 390) / chartRes
+
+// Calculate annualized volatility from log returns
+logReturn  = math.log(close / close[1])
+volatility = ta.stdev(logReturn, volLookback) * math.sqrt(periodsPerYear)
+
+// Expected move for one bar: S * σ * √(1/periodsPerYear)
+expectedMove   = close[1] * volatility * math.sqrt(1 / periodsPerYear)
+
+// Define dynamic thresholds around the previous close
+upperThreshold = close[1] + expectedMove
+lowerThreshold = close[1] - expectedMove
+
+// Plot thresholds for visual reference
+plot(upperThreshold, color=color.green, title="Upper Threshold")
+plot(lowerThreshold, color=color.red, title="Lower Threshold")
+
+// Trading Signals: breakout of thresholds
+longCondition  = close > upperThreshold
+shortCondition = close < lowerThreshold
+
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+
+// Fixed Risk Management Exit Orders
+if (strategy.position_size > 0)
+    strategy.exit("Exit Long", from_entry="Long", 
+                  stop=close * (1 - stopLossPerc / 100), 
+                  limit=close * (1 + takeProfitPerc / 100))
+if (strategy.position_size < 0)
+    strategy.exit("Exit Short", from_entry="Short", 
+                  stop=close * (1 + stopLossPerc / 100), 
+                  limit=close * (1 - takeProfitPerc / 100))

@@ -1,0 +1,50 @@
+/*backtest
+start: 2024-01-01 00:00:00
+end: 2024-01-31 23:59:59
+period: 1h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("EMA 34 Crossover Strategy_4", overlay=true)
+
+length = 34
+exitPoints = 50
+
+emaClose = ta.ema(close, length)
+emaHigh = ta.ema(high, length)
+emaLow = ta.ema(low, length)
+
+var float[] entryPrices = array.new_float()
+var float[] exitLevels = array.new_float()
+
+// Long entry condition: Price crosses above EMA 34 high
+enterLong = ta.crossover(close, emaHigh)
+
+// Short entry condition: Price crosses below EMA 34 low
+enterShort = ta.crossunder(close, emaLow)
+
+// Exit condition for both long and short trades
+exitLong = array.size(entryPrices) > 0 ? close >= array.get(entryPrices, array.size(entryPrices) - 1) + exitPoints : false
+exitShort = array.size(entryPrices) > 0 ? close <= array.get(entryPrices, array.size(entryPrices) - 1) - exitPoints : false
+
+if (enterLong)
+    array.push(entryPrices, close)
+    array.push(exitLevels, close + exitPoints)
+    strategy.entry("Buy", strategy.long)
+
+if (enterShort)
+    array.push(entryPrices, close)
+    array.push(exitLevels, close - exitPoints)
+    strategy.entry("Sell", strategy.short)
+
+if (exitLong)
+    strategy.close("Buy")
+
+if (exitShort)
+    strategy.close("Sell")
+
+plot(emaClose, color=color.blue, title="EMA 34 Close")
+plot(emaHigh, color=color.red, title="EMA 34 High")
+plot(emaLow, color=color.green, title="EMA 34 Low")

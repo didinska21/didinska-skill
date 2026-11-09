@@ -1,0 +1,45 @@
+/*backtest
+start: 2023-01-19 00:00:00
+end: 2024-01-25 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Sosawolf
+
+//@version=5
+strategy("Predict Next Candle Close Strategy", overlay=true)
+
+// Function to predict next candle close based on previous two candles
+predictNextCandleClose(open1, close1, open2, close2) =>
+    if close1 > open1 and close2 > open2
+        // Bullish trend, predict next candle close to be bullish
+        close1 + (close1 - open1)
+    else if close1 < open1 and close2 < open2
+        // Bearish trend, predict next candle close to be bearish
+        close1 - (open1 - close1)
+    else
+        // Indecisive or ranging market, predict next candle close to be neutral
+        close1
+
+// Get previous two 30-minute candles' open and close prices
+open1 = request.security(syminfo.tickerid, "30", open[1])
+close1 = request.security(syminfo.tickerid, "30", close[1])
+open2 = request.security(syminfo.tickerid, "30", open[2])
+close2 = request.security(syminfo.tickerid, "30", close[2])
+
+// Predict next 15-minute candle close
+predictedClose = predictNextCandleClose(open1, close1, open2, close2)
+
+// Plot the predicted close as a line
+plot(predictedClose, color=color.blue, linewidth=2, title="Predicted Close")
+
+// Buy condition: Predicted close is higher than the current close
+buyCondition = predictedClose > close
+strategy.entry("Buy", strategy.long, when=buyCondition)
+
+// Sell condition: Predicted close is lower than the current close
+sellCondition = predictedClose < close
+strategy.entry("Sell", strategy.short, when=sellCondition)

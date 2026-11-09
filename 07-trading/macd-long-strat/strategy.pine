@@ -1,0 +1,42 @@
+/*backtest
+start: 2022-12-08 00:00:00
+end: 2023-12-14 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © TheGrindToday
+
+//@version=4
+strategy("MACD Long Strat", overlay=false)
+
+
+//fast = 12, slow = 26
+fast = 6, slow = 26
+fastMA = ema(close, fast)
+slowMA = ema(close, slow)
+macd = fastMA - slowMA
+signal = sma(macd, 9)
+histogram = macd-signal
+
+macdpos = histogram[0] > 0
+macdneg = histogram[0] < 0
+
+histogram_reversing_negative = histogram[1] > histogram[2]
+
+
+LongEntryCondition =  histogram > histogram[1] 
+ShortEntryCondition =  histogram < histogram[1]
+
+exitConditionLong = histogram[0] < histogram[2]
+
+if (LongEntryCondition and histogram_reversing_negative)
+    strategy.entry("Long", strategy.long)
+
+
+if (exitConditionLong)
+    strategy.close("Long")
+    
+plot(histogram)

@@ -1,0 +1,62 @@
+/*backtest
+start: 2024-02-19 00:00:00
+end: 2025-02-17 00:00:00
+period: 1h
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("Evolutivna Strategija - AI Optimizacija", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// Varijable za praćenje performansi
+var float bestProfit = na
+var float bestStopLoss = na
+var float bestTakeProfit = na
+
+// Početni parametri (fiksne vrednosti)
+ema_fast_final = input.int(5, "Početni EMA Fast", minval=5, maxval=50)  // Mora biti simple int
+ema_slow_final = input.int(10, "Početni EMA Slow", minval=10, maxval=100)  // Mora biti simple int
+
+// Kreiranje EMA koristeći fiksne vrednosti
+ema_fast_adaptive = ta.ema(close, ema_fast_final)
+ema_slow_adaptive = ta.ema(close, ema_slow_final)
+
+// Signali kupovine i prodaje
+buy_signal = ta.crossover(ema_fast_adaptive, ema_slow_adaptive)
+sell_signal = ta.crossunder(ema_fast_adaptive, ema_slow_adaptive)
+
+// Stop Loss i Take Profit parametri
+sl_input = input.float(1.0, "Početni Stop Loss (%)", step=0.1)
+tp_input = input.float(1.0, "Početni Take Profit (%)", step=0.1)
+
+// Dinamično prilagođavanje parametara SL i TP
+if (na(bestProfit) or strategy.netprofit > bestProfit)
+    bestProfit := strategy.netprofit
+    bestStopLoss := sl_input
+    bestTakeProfit := tp_input
+
+// Otvaranje pozicija
+if (buy_signal)
+    strategy.entry("BUY", strategy.long)
+    strategy.exit("TP/SL", "BUY", stop=close * (1 - bestStopLoss / 100), limit=close * (1 + bestTakeProfit / 100))
+
+if (sell_signal)
+    strategy.entry("SELL", strategy.short)
+    strategy.exit("TP/SL", "SELL", stop=close * (1 + bestStopLoss / 100), limit=close * (1 - bestTakeProfit / 100))
+
+// Vizualizacija
+plot(ema_fast_adaptive, color=color.green, title="EMA Fast (Adaptive)")
+plot(ema_slow_adaptive, color=color.red, title="EMA Slow (Adaptive)")
+
+// Prikaz najboljih rezultata
+var label result_label = na
+if (na(result_label))
+    result_label := label.new(x=bar_index, y=high, text="", style=label.style_label_down, color=color.blue)
+
+label.set_xy(result_label, bar_index, high)
+label.set_text(result_label, "Best rezult: " + str.tostring(bestProfit, "#.##") +
+ "\nSL: " + str.tostring(bestStopLoss) + "%" +
+ "\nTP: " + str.tostring(bestTakeProfit) + "%" +
+ "\nEMA Fast: " + str.tostring(ema_fast_final) +
+ "\nEMA Slow: " + str.tostring(ema_slow_final))

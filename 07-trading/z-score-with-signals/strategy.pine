@@ -1,0 +1,39 @@
+/*backtest
+start: 2022-02-07 00:00:00
+end: 2022-05-07 00:00:00
+period: 1h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Steversteves
+
+//@version=5
+
+indicator("Z Score with Signals", max_labels_count = 500)
+
+// Calculating High Z Score
+
+a = ta.sma(high, 500)
+b = ta.stdev(high, 500)
+c = (high - a) / b 
+
+// Calculating Low Z Score
+
+d = ta.sma(low, 500)
+e = ta.stdev(low, 500)
+f = (low - d) / e 
+
+// Calculating High and Low Average
+
+z = (c + f) / 2 
+ 
+plot (z)
+
+// Condition Alerts
+
+if (z < -2.50)
+    strategy.entry("Enter Long", strategy.long)
+else if (z > 2.50)
+    strategy.entry("Enter Short", strategy.short)

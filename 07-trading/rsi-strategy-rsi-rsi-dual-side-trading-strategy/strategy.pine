@@ -1,0 +1,40 @@
+/*backtest
+start: 2023-04-06 00:00:00
+end: 2024-04-11 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("RSI Strategy", overlay=true)
+
+// Définition des paramètres
+rsi_length = input(14, title="RSI Length")
+buy_level = input(35, title="Buy Level")
+sell_level = input(75, title="Sell Level")
+pyramiding = input(5, title="Pyramiding")
+
+// Calcul du RSI
+rsi = ta.rsi(close, rsi_length)
+
+// Règles d'entrée
+buy_signal = ta.crossover(rsi, buy_level)
+sell_signal = ta.crossunder(rsi, sell_level)
+
+// Gestion des positions
+if (buy_signal)
+    strategy.entry("Buy", strategy.long)
+if (sell_signal)
+    strategy.entry("Sell", strategy.short)
+
+// Pyramiding
+if (strategy.opentrades < pyramiding)
+    strategy.entry("Buy", strategy.long)
+else if (strategy.opentrades > pyramiding)
+    strategy.entry("Sell", strategy.short)
+
+// Tracé du RSI
+plot(rsi, title="RSI", color=color.blue)
+hline(buy_level, "Buy Level", color=color.green)
+hline(sell_level, "Sell Level", color=color.red)

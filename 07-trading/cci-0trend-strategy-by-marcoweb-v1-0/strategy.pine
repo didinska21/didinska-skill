@@ -1,0 +1,42 @@
+/*backtest
+start: 2022-11-30 00:00:00
+end: 2023-12-06 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=2
+strategy("CCI 0Trend Strategy (by Marcoweb) v1.0", shorttitle="CCI_0T_Strat_v1.0", overlay=true)
+
+///////////// CCI
+CCIlength = input(20, minval=1, title="CCI Period Length") 
+CCIoverSold = -100
+CCIoverBought = 100
+CCIzeroLine = 0
+CCI = cci(hlc3, CCIlength)
+price = hlc3
+vcci = cci(price, CCIlength)
+
+source = close
+buyEntry = crossover(source, CCIoverSold)
+sellEntry = crossunder(source, CCIoverBought)
+plot(CCI, color=black,title="CCI")
+p1 = plot(CCIoverSold, color=red,title="-100")
+p2 = plot(CCIoverBought, color=blue,title="100")
+p3 = plot(CCIzeroLine, color=orange,title="0")
+
+///////////// CCI 0Trend v1.0 Strategy 
+if (not na(vcci))
+
+    if (crossover(CCI, CCIoverSold))
+        strategy.entry("CCI_L", strategy.long, stop=CCIoverSold,  comment="CCI_L")
+    else
+        strategy.cancel(id="CCI_L")
+        
+    if (crossunder(CCI, CCIoverBought))
+        strategy.entry("CCI_S", strategy.short, stop=CCIoverBought,  comment="CCI_S")
+    else
+        strategy.cancel(id="CCI_S")
+
+//plot(strategy.equity, title="equity", color=red, linewidth=2, style=areabr)

@@ -1,0 +1,51 @@
+/*backtest
+start: 2024-03-28 00:00:00
+end: 2025-03-27 00:00:00
+period: 3h
+basePeriod: 3h
+exchanges: [{"eid":"Futures_Binance","currency":"ETH_USDT"}]
+*/
+
+//@version=6
+strategy("Bollinger Bands Breakout Strategy", overlay=true)
+
+// Input settings
+length = input.int(20, title="BB Length")
+src = close
+mult = input.float(2.0, title="BB Multiplier")
+
+// Bollinger Bands Calculation
+basis = ta.sma(src, length)
+dev = mult * ta.stdev(src, length)
+upper = basis + dev
+lower = basis - dev
+
+// Breakout Conditions
+longCondition = ta.crossover(close, upper)
+shortCondition = ta.crossunder(close, lower)
+
+// Plotting Bollinger Bands
+plot(basis, color=color.blue, title="Middle Band")
+plot(upper, color=color.red, title="Upper Band")
+plot(lower, color=color.green, title="Lower Band")
+
+// Strategy Orders
+if longCondition
+    strategy.entry("Long", strategy.long)
+
+if shortCondition
+    strategy.entry("Short", strategy.short)
+
+// Exit conditions (optional)
+takeProfitPerc = input.float(5, title="Take Profit %") / 100
+stopLossPerc = input.float(2, title="Stop Loss %") / 100
+
+// Calculate TP/SL levels
+longTP = strategy.position_avg_price * (1 + takeProfitPerc)
+longSL = strategy.position_avg_price * (1 - stopLossPerc)
+shortTP = strategy.position_avg_price * (1 - takeProfitPerc)
+shortSL = strategy.position_avg_price * (1 + stopLossPerc)
+
+// Exit strategy
+strategy.exit("Long TP/SL", from_entry="Long", limit=longTP, stop=longSL)
+strategy.exit("Short TP/SL", from_entry="Short", limit=shortTP, stop=shortSL)

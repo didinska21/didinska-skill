@@ -1,0 +1,36 @@
+/*backtest
+start: 2022-11-16 00:00:00
+end: 2023-11-22 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © racer8
+//@version=4
+strategy("Buy-The-Dip", overlay=true)
+
+atn = input(15, "ATR Period")
+atr = sma(tr,atn)[1]
+bought = strategy.position_size[0] > strategy.position_size[1]
+
+slm = input(2.0,"ATR SL Multiple",minval=0)
+StopPrice  = strategy.position_avg_price - slm*atr              // determines stop loss's price 
+FixedStopPrice = valuewhen(bought,StopPrice,0)                  // stores original StopPrice  
+plot(FixedStopPrice,"Stop Loss",color=color.red,linewidth=2,style=plot.style_cross)
+
+tpm = input(1.0,"ATR TP Multiple",minval=0)
+TakePrice  = strategy.position_avg_price + tpm*atr              // determines Take Profit's price 
+FixedTakePrice = valuewhen(bought,TakePrice,0)                  // stores original TakePrice  
+plot(FixedTakePrice,"Take Profit",color=color.green,linewidth=2,style=plot.style_cross)
+
+nn = input(7,"Channel Length")
+ll = lowest(low,nn)
+
+if close<ll[1]
+    strategy.entry("Buy",strategy.long)
+if strategy.position_size > 0
+    strategy.exit(id="XL SL", stop=FixedStopPrice, limit=FixedTakePrice)    // commands stop loss order to exit!
+
+plot(ll,color=color.orange)

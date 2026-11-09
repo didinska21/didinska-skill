@@ -1,0 +1,56 @@
+/*backtest
+start: 2022-12-01 00:00:00
+end: 2023-12-07 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © jacobdickson255
+
+strategy("Crypto Bull Run Tracker", overlay=true, pyramiding=0)
+
+//Dema Scripting
+Demalength = input.int(230, minval=1)
+src = close
+e1 = ta.ema(src, Demalength)
+e2 = ta.ema(e1, Demalength)
+dema = 2 * e1 - e2
+plot(dema, "DEMA", color=#43A047)
+
+//Tema Scripting
+Temalength = input.int(210, minval=1)
+ema1 = ta.ema(close, Temalength)
+ema2 = ta.ema(ema1, Temalength)
+ema3 = ta.ema(ema2, Temalength)
+tema = 3 * (ema1 - ema2) + ema3
+plot(tema, "TEMA", color=#2962FF)
+
+delayBars = input(5, title="Bar Delay")
+var int lastTradeBar = na
+
+longCondition = ta.crossover(tema, dema) 
+longExit = ta.crossunder(tema, dema)
+shortCondition = ta.crossunder(tema, dema)
+shortExit = ta.crossover(tema, dema)
+
+// Exit conditions should be checked before entry conditions
+// Close short position if a long condition is present
+if ((shortExit and strategy.position_size < 0)) // If conditions for exiting the short are met, and there is a balance in the short direction, exit the short
+    strategy.close("Short")
+   
+
+// Close long position if a short condition is present
+if ((longExit and strategy.position_size > 0))
+    strategy.close("Long")
+   
+// Now check for entry conditions
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+    lastTradeBar := bar_index
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+    lastTradeBar := bar_index

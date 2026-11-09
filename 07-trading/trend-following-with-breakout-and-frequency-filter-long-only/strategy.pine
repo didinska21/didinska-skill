@@ -1,0 +1,53 @@
+/*backtest
+start: 2023-05-22 00:00:00
+end: 2024-05-27 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("Trend Following with Breakout and Frequency Filter (Long Only)", overlay=true)
+
+// 输入参数
+emaLength = input.int(50, title="EMA长度")
+lookbackPeriodMin = input.int(80, title="最短回溯期")
+lookbackPeriodMax = input.int(120, title="最长回溯期")
+stopLossPct = input.float(2, title="止损百分比") / 100  // 止损百分比
+minHoldBars = input.int(10, title="最小持仓K线数量")  // 最小持仓K线数量
+
+// 计算EMA
+ema = ta.ema(close, emaLength)
+
+// 计算最高价和最低价
+highestHigh = ta.highest(high, lookbackPeriodMax)
+lowestLow = ta.lowest(low, lookbackPeriodMax)
+
+// 定义趋势方向
+isBullish = close > ema
+
+// 定义突破信号
+breakoutCondition = (ta.crossover(close, highestHigh[lookbackPeriodMin]) or ta.crossover(close, highestHigh[lookbackPeriodMax])) and isBullish
+
+// 计算止损点
+stopLossLevelLong = close * (1 - stopLossPct)
+
+// 绘制EMA
+plot(ema, title="EMA", color=color.blue)
+
+// 记录上次开仓时间
+var float lastEntryTime = na
+
+// 策略执行并标注信号
+if (breakoutCondition and (na(lastEntryTime) or (time - lastEntryTime) > minHoldBars * timeframe.multiplier))
+    strategy.entry("做多", strategy.long)
+    label.new(bar_index, high, text="买入", style=label.style_label_up, color=color.green, textcolor=color.white)
+    strategy.exit("止损", from_entry="做多", stop=stopLossLevelLong)
+    lastEntryTime := time
+
+// 定义趋势结束信号
+exitCondition = close < ema
+
+if (exitCondition and (strategy.position_size > 0) and (time - lastEntryTime) > minHoldBars * timeframe.multiplier)
+    strategy.close("做多")
+    label.new(bar_index, low, text="卖出", style=label.style_label_down, color=color.red, textcolor=color.white)

@@ -1,0 +1,22 @@
+/*backtest
+start: 2022-09-11 00:00:00
+end: 2023-09-11 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © DynamicSignalLab
+
+//@version=5
+strategy("Sell in May, buy in September Strategy", overlay=false)
+
+longCondition = month==9
+closecondition = month==5
+
+if longCondition
+    strategy.entry("long", strategy.long)
+
+if closecondition
+    strategy.close("long", when=closecondition)

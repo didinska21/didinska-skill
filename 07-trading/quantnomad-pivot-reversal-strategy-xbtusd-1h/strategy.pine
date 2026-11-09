@@ -1,0 +1,47 @@
+/*backtest
+start: 2023-10-16 00:00:00
+end: 2023-11-15 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=3
+strategy("QuantNomad - Pivot Reversal Strategy - XBTUSD - 1h", overlay=true, default_qty_type = strategy.percent_of_equity, default_qty_value = 50)
+
+// 
+// author: QuantNomad
+// date: 2019-06-01
+// Pivot Reversal Strategy - XBTUSD - 1h
+// https://www.tradingview.com/u/QuantNomad/
+// https://t.me/quantnomad
+//
+
+leftBars  = input(4)
+rightBars = input(4)
+
+swh = pivothigh(leftBars, rightBars)
+swl = pivotlow(leftBars, rightBars)
+
+swh_cond = not na(swh)
+
+hprice = 0.0
+hprice := swh_cond ? swh : hprice[1]
+
+le = false
+le := swh_cond ? true : (le[1] and high > hprice ? false : le[1])
+
+if (le)
+    strategy.entry("PivRevLE", strategy.long, comment="PivRevLE", stop=hprice + syminfo.mintick)
+
+swl_cond = not na(swl)
+
+lprice = 0.0
+lprice := swl_cond ? swl : lprice[1]
+
+
+se = false
+se := swl_cond ? true : (se[1] and low < lprice ? false : se[1])
+
+if (se)
+    strategy.entry("PivRevSE", strategy.short, comment="PivRevSE", stop=lprice - syminfo.mintick)

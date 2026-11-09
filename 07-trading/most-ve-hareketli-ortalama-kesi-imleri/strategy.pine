@@ -1,0 +1,40 @@
+/*backtest
+start: 2023-05-03 00:00:00
+end: 2024-05-08 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("MOST ve Hareketli Ortalama Kesişimleri", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// Girdi parametrelerini tanımlayın
+fastMALength = input.int(title="Hızlı MA Uzunluğu", defval=14, minval=1)
+slowMALength = input.int(title="Yavaş MA Uzunluğu", defval=21, minval=1)
+mostLength = input.int(title="MOST Uzunluğu", defval=9, minval=1)
+
+// Hareketli ortalamaları hesaplayın
+fastMA = ta.sma(close, fastMALength)
+slowMA = ta.sma(close, slowMALength)
+
+// MOST'u hesaplayın
+most = ta.highest(close, mostLength)
+
+// Alım ve satım sinyallerini oluşturun
+buySignal = ta.crossover(fastMA, slowMA)
+sellSignal = ta.crossunder(fastMA, slowMA)
+
+// Uzun ve kısa pozisyonlar için giriş koşulları
+if (buySignal)
+    strategy.entry("Alım", strategy.long)  // Alım sinyalinde uzun pozisyon girin
+
+if (sellSignal)
+    strategy.entry("Satım", strategy.short)  // Satım sinyalinde kısa pozisyon girin
+
+// Göstergeleri ve sinyalleri çizin
+plotshape(buySignal, title="Alım Sinyali", location=location.belowbar, color=color.green, style=shape.labelup, text="AL")
+plotshape(sellSignal, title="Satım Sinyali", location=location.abovebar, color=color.red, style=shape.labeldown, text="SAT")
+plot(fastMA, title="Hızlı MA", color=color.blue)
+plot(slowMA, title="Yavaş MA", color=color.red)
+plot(most, title="MOST", color=color.purple)

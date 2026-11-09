@@ -1,0 +1,63 @@
+/*backtest
+start: 2024-02-19 00:00:00
+end: 2025-02-17 08:00:00
+period: 2d
+basePeriod: 2d
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Sunnysun7771
+
+//@version=6
+//@version=5
+strategy("RSI Breakout Strategy with RR 1:4", overlay=true)
+
+// Input parameters
+rsi_length = input(14, title="RSI Length")
+rsi_overbought = input(70, title="RSI Overbought Level")
+rsi_oversold = input(30, title="RSI Oversold Level")
+
+// Calculate RSI
+rsi_value = ta.rsi(close, rsi_length)
+
+// Identify previous RSI highs and lows
+var float rsi_prev_high = na
+var float rsi_prev_low = na
+
+// Update previous RSI high
+if (rsi_value > rsi_value[1] and rsi_value[1] < rsi_value[2])
+    rsi_prev_high := rsi_value[1]
+
+// Update previous RSI low
+if (rsi_value < rsi_value[1] and rsi_value[1] > rsi_value[2])
+    rsi_prev_low := rsi_value[1]
+
+// Conditions for entering a long position
+long_condition = rsi_value > rsi_prev_high and not na(rsi_prev_high)
+
+// Conditions for entering a short position
+short_condition = rsi_value < rsi_prev_low and not na(rsi_prev_low)
+
+// Calculate stop loss and take profit for long positions
+long_stop_loss = low[1]  // Previous candle's low
+long_take_profit = close + (4 * (close - long_stop_loss))  // RR 1:4
+
+// Enter long position if all conditions are met
+if (long_condition)
+    strategy.entry("Long", strategy.long)
+    strategy.exit("Take Profit/Stop Loss", from_entry="Long", stop=long_stop_loss, limit=long_take_profit)
+
+// Calculate stop loss and take profit for short positions
+short_stop_loss = high[1]  // Previous candle's high
+short_take_profit = close - (4 * (short_stop_loss - close))  // RR 1:4
+
+// Enter short position if all conditions are met
+if (short_condition)
+    strategy.entry("Short", strategy.short)
+    strategy.exit("Take Profit/Stop Loss", from_entry="Short", stop=short_stop_loss, limit=short_take_profit)
+
+// Plotting RSI for visualization
+hline(rsi_overbought, "Overbought", color=color.red)
+hline(rsi_oversold, "Oversold", color=color.green)
+plot(rsi_value, color=color.purple, title="RSI")

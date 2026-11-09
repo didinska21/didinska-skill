@@ -1,0 +1,33 @@
+/*backtest
+start: 2023-12-01 00:00:00
+end: 2023-12-31 23:59:59
+period: 1h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=4
+strategy(title="MA Cross", overlay=true)
+short = sma(close, 50)
+short1 = sma(close[5], 50)
+medium = sma(close, 100)
+long = sma(close, 200)
+long1 = sma(close[5], 200)
+
+plot(short, color = color.red)
+plot(long, color = color.green)
+trendUp = (cross(short, long) and (long1 > short1) ? true : false)
+x = if (trendUp)
+    (long1 - short1)*5
+else
+    0
+    
+//start     = timestamp(2000, 01, 01, 00, 00)        // backtest start window
+//finish    = timestamp(2020, 02, 09, 23, 59)        // backtest finish window
+//window()  => time >= start and time <= finish ? true : false  
+
+//strategy.entry("long", true, 1000, limit = high, when = window() and trendUp)
+//strategy.close("long", when = window() and close < medium)
+
+strategy.entry("long", true, 1, limit = high, when = trendUp)
+strategy.close("long", when = close < medium)

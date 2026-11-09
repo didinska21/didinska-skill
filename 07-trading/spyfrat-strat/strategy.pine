@@ -1,0 +1,48 @@
+/*backtest
+start: 2023-10-03 00:00:00
+end: 2023-11-02 00:00:00
+period: 4h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=4
+//Based on Larry Connors RSI-2 Strategy - Lower RSI
+strategy(title="Spyfrat Strat", shorttitle="SpyfratStrat", overlay=true)
+src = close, 
+// BB Init
+source = close
+length = input(50, minval=1)
+mult = input(0.2, title="Mult Factor", minval=0.001, maxval=50)
+alertLevel=input(0.1)
+impulseLevel=input(0.75)
+showRange = input(false, type=bool)
+//RSI CODE
+up = rma(max(change(src), 0), 30)
+down = rma(-min(change(src), 0), 30)
+rsi = down == 0 ? 100 : up == 0 ? 0 : 100 - (100 / (1 + up / down))
+//BB CODE
+basis = sma(source, length)
+dev = mult * stdev(source, length)
+upper = basis + dev
+lower = basis - dev
+bbr = source>upper?(((source-upper)/(upper-lower))/10): source<lower?(((source-lower)/(upper-lower))/10) : 0.1
+bbi = bbr - nz(bbr[1]) 
+//Rule
+long = rsi>52 and rsi<65 and  bbi>0.11 and bbi<0.7
+short = rsi<48 and rsi>35 and  bbi<-0.11 and bbi>-0.7
+//Trade Entry
+strategy.entry("long", strategy.long, when=long)
+strategy.entry("short", strategy.short, when=short)
+//Trade Exit
+TP = input(250) * 10
+SL = input(20) * 10
+TS = input(0) * 10
+CQ = 100
+
+TPP = (TP > 0) ? TP : na
+SLP = (SL > 0) ? SL : na
+TSP = (TS > 0) ? TS : na
+
+strategy.exit("Close Long", "long", qty_percent=CQ, profit=TPP, loss=SLP, trail_points=TSP)
+strategy.exit("Close Short", "short", qty_percent=CQ, profit=TPP, loss=SLP, trail_points=TSP)

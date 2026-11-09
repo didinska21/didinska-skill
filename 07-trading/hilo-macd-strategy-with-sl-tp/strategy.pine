@@ -1,0 +1,52 @@
+/*backtest
+start: 2024-05-01 00:00:00
+end: 2024-05-31 23:59:59
+period: 1h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("Hilo MACD Strategy with SL/TP", overlay=true)
+
+// Parâmetros do Hilo Activator
+hiloPeriod = input.int(4, title="Hilo Period")
+
+// Cálculo do Hilo Activator
+hiloHigh = ta.highest(high, hiloPeriod)
+hiloLow = ta.lowest(low, hiloPeriod)
+hiloActivator = ta.valuewhen(close > hiloHigh[1] and close[1] < hiloHigh[2], hiloHigh, hiloPeriod)
+hiloActivator := na(hiloActivator) ? ta.valuewhen(close < hiloLow[1] and close[1] > hiloLow[2], hiloLow, hiloPeriod) : hiloActivator
+hiloActivator := na(hiloActivator) ? ta.valuewhen(close[1] > hiloHigh[1] and close < hiloLow[1], hiloLow, hiloPeriod) : hiloActivator
+
+hiloColor = hiloActivator > close ? color.red : color.green
+plot(hiloActivator, title="Hilo Activator", color=hiloColor, linewidth=2)
+
+// Parâmetros do MACD
+fastLength = input.int(12, title="MACD Fast Length")
+slowLength = input.int(26, title="MACD Slow Length")
+signalSmoothing = input.int(9, title="MACD Signal Smoothing")
+
+// Cálculo do MACD
+[macdLine, signalLine, _] = ta.macd(close, fastLength, slowLength, signalSmoothing)
+
+// Plot MACD para visualização
+plot(macdLine, title="MACD Line", color=color.blue)
+plot(signalLine, title="Signal Line", color=color.orange)
+
+// Parâmetros de Stop Loss e Take Profit
+stopLoss = input.float(1, title="Stop Loss (ATR)", step=0.1)
+takeProfit = input.float(2, title="Take Profit (ATR)", step=0.1)
+
+// Cálculo do ATR para SL/TP
+atrValue = ta.atr(14)
+
+// Condições de entrada e saída
+longCondition = ta.crossover(macdLine, signalLine) and hiloColor == color.green
+shortCondition = ta.crossunder(macdLine, signalLine) and hiloColor == color.red
+
+if (longCondition)
+    strategy.entry("Long", strategy.long, stop=close - stopLoss * atrValue, limit=close + takeProfit * atrValue)
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short, stop=close + stopLoss * atrValue, limit=close - takeProfit * atrValue)

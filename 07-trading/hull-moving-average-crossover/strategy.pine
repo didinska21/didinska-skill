@@ -1,0 +1,43 @@
+/*backtest
+start: 2019-12-23 08:00:00
+end: 2024-11-28 00:00:00
+period: 2d
+basePeriod: 2d
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("Hull Moving Average Crossover", overlay=true)
+
+
+fastLength = input.int(9, "Fast HMA Length", minval=1)
+slowLength = input.int(16, "Slow HMA Length", minval=1)
+
+
+hma(src, length) =>
+    wma1 = ta.wma(src, length / 2)
+    wma2 = ta.wma(src, length)
+    ta.wma(2 * wma1 - wma2, math.floor(math.sqrt(length)))
+
+
+fastHMA = hma(close, fastLength)
+slowHMA = hma(close, slowLength)
+
+
+plot(fastHMA, color=color.blue, title="Fast HMA")
+plot(slowHMA, color=color.red, title="Slow HMA")
+
+
+longCondition = ta.crossover(fastHMA, slowHMA)
+shortCondition = ta.crossunder(fastHMA, slowHMA)
+
+
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+
+
+plotshape(longCondition, style=shape.triangleup, location=location.belowbar, color=color.green, size=size.small)
+plotshape(shortCondition, style=shape.triangledown, location=location.abovebar, color=color.red, size=size.small)

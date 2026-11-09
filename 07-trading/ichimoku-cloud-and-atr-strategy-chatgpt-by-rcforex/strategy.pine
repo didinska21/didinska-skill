@@ -1,0 +1,49 @@
+/*backtest
+start: 2023-05-17 00:00:00
+end: 2024-05-22 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=4
+strategy("Ichimoku Cloud and ATR Strategy - ChatGPT by RCForex", overlay=true)
+
+
+// Define Inputs
+conversionPeriod = input(9, title="Conversion Line Period")
+basePeriod = input(26, title="Base Line Period")
+leadSpanBPeriod = input(52, title="Lead Span B Period")
+atrPeriod = input(14, title="ATR Period")
+atrMultiplier = input(2, title="ATR Multiplier")
+
+
+// Define Indicators
+conversion = sma((high + low) / 2, conversionPeriod)
+base = sma((high + low) / 2, basePeriod)
+leadSpanA = avg(conversion, base)
+leadSpanB = sma(high + low + close, leadSpanBPeriod) / 3
+atr = atr(atrPeriod)
+atrStop = atr * atrMultiplier
+
+
+// Define Conditions
+aboveCloud = close > leadSpanA and close > leadSpanB
+belowCloud = close < leadSpanA and close < leadSpanB
+longSignal = aboveCloud and (close > high[1] or high > high[1])
+shortSignal = belowCloud and (close < low[1] or low < low[1])
+
+
+// Enter Long Position
+if longSignal
+    strategy.entry("Buy", strategy.long, stop=leadSpanA - atrStop, comment="Long")
+
+
+// Enter Short Position
+if shortSignal
+    strategy.entry("Sell", strategy.short, stop=leadSpanA + atrStop, comment="Short")
+
+
+// Exit Positions
+strategy.exit("Exit", "Buy", stop=leadSpanA - atrStop)
+strategy.exit("Exit", "Sell", stop=leadSpanA + atrStop)

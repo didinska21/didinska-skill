@@ -1,0 +1,68 @@
+/*backtest
+start: 2022-11-24 00:00:00
+end: 2023-11-30 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © cloudofw
+
+//@version=5
+strategy("F2.2 Martingale Scalping Strategy", overlay=true)
+
+// Input parameters
+rsiOverbought = input.int(70, "RSI Overbought Threshold")
+rsiOversold = input.int(30, "RSI Oversold Threshold")
+oscillatorPeriod = input.int(5, "Period for oscillator")
+k1 = input.float(0.2, "K1 for oscillator's zone")
+k2 = input.float(0.5, "K2 for oscillator's zone")
+trendActivity = input.float(1.0, "Main Trend filter", minval=0.1)
+decreasePerOrder = input.float(0.1, "Trend filter decrease per order", minval=0.01)
+
+// Calculate custom oscillator and RSI
+oscillator = ta.stoch(close, high, low, oscillatorPeriod)
+rsiValue = ta.rsi(close, 14)
+
+zoneHigh = 100 - k1 * 100
+zoneLow = k2 * 100
+
+// Entry conditions
+longCondition = oscillator < zoneLow and trendActivity > 0 and rsiValue < rsiOversold
+shortCondition = oscillator > zoneHigh and trendActivity > 0 and rsiValue > rsiOverbought
+
+// Martingale logic
+var lot_multiplier = 1.0
+var last_lot_size = strategy.equity * 0.01
+var trade_1_profit = 0.0
+if (strategy.position_size != 0)
+    lot_multiplier := last_lot_size / strategy.position_size < 1.5 ? lot_multiplier * 1.5 : 1.0
+    trade_1_profit := strategy.grossprofit
+else
+    lot_multiplier := 1.0
+    trade_1_profit := 0.0
+lot_size = strategy.equity * 0.01 * lot_multiplier + trade_1_profit
+last_lot_size := lot_size
+
+// Trading logic
+if longCondition and strategy.position_size == 0
+    strategy.entry("Long", strategy.long)
+    
+if shortCondition and strategy.position_size == 0
+    strategy.entry("Short", strategy.short)
+
+// Exit conditions
+if longCondition == false and strategy.position_size > 0
+    strategy.close("Long")
+
+if shortCondition == false and strategy.position_size < 0
+    strategy.close("Short")
+
+// Indicators on chart
+plotshape(series=longCondition, title="Buy Entry", location=location.belowbar, color=color.green, style=shape.labelup, text="Buy")
+plotshape(series=shortCondition, title="Sell Entry", location=location.abovebar, color=color.red, style=shape.labeldown, text="Sell")
+
+plot(oscillator, color=color.blue, title="Oscillator")
+hline(zoneHigh, "Upper Zone", color=color.red)
+hline(zoneLow, "Lower Zone", color=color.green)

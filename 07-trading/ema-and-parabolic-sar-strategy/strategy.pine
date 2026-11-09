@@ -1,0 +1,61 @@
+/*backtest
+start: 2024-05-01 00:00:00
+end: 2024-05-31 23:59:59
+period: 1h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("EMA and Parabolic SAR Strategy", overlay=true)
+
+// Input parameters for EMAs and Parabolic SAR
+emaShortPeriod = input.int(8, title="Short EMA Period")
+emaLongPeriod = input.int(21, title="Long EMA Period")
+sarStart = input.float(0.02, title="Parabolic SAR Start")
+sarIncrement = input.float(0.02, title="Parabolic SAR Increment")
+sarMaximum = input.float(0.2, title="Parabolic SAR Maximum")
+fixedSL = input.int(83, title="Fixed Stop Loss (pts)")
+
+// Calculate EMAs and Parabolic SAR
+emaShort = ta.ema(close, emaShortPeriod)
+emaLong = ta.ema(close, emaLongPeriod)
+sar = ta.sar(sarStart, sarIncrement, sarMaximum)
+
+// Entry conditions
+longCondition = ta.crossover(emaShort, emaLong) and close > sar
+shortCondition = ta.crossunder(emaShort, emaLong) and close < sar
+
+// Exit conditions
+longExitCondition = close < sar
+shortExitCondition = close > sar
+
+// Strategy entry and exit
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+
+if (longExitCondition)
+    strategy.close("Long")
+
+if (shortExitCondition)
+    strategy.close("Short")
+
+// Fixed Stop Loss
+strategy.exit("Long Exit", "Long", stop=close - fixedSL * syminfo.mintick)
+strategy.exit("Short Exit", "Short", stop=close + fixedSL * syminfo.mintick)
+
+// Exit all positions at 15:15
+exitHour = 15
+exitMinute = 15
+exitTime = timestamp(year(timenow), month(timenow), dayofmonth(timenow), exitHour, exitMinute)
+
+if (timenow >= exitTime)
+    strategy.close_all()
+
+// Plot EMAs and Parabolic SAR
+plot(emaShort, color=color.blue, title="8 EMA")
+plot(emaLong, color=color.red, title="21 EMA")
+plot(sar, style=plot.style_cross, color=color.green, title="Parabolic SAR")

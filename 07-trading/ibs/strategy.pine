@@ -1,0 +1,29 @@
+/*backtest
+start: 2023-01-01 00:00:00
+end: 2023-09-07 00:00:00
+period: 1h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=2
+// strategy("IBS", initial_capital=10000, overlay=false, pyramiding=5, default_qty_value=100, currency="USD")
+
+//strategy.risk.allow_entry_in(strategy.direction.long)
+
+
+src = close
+ibs = (close - low) / (high - low) * 100
+
+longCondition = ibs <5
+if (longCondition)
+    strategy.entry("My Long Entry Id", strategy.long)
+
+//shortCondition = close > high[1]
+shortCondition = ibs > 99
+if (shortCondition)
+    strategy.entry("My Short Entry Id", strategy.short)
+
+p = close * 0.01 * 10
+strategy.exit("exit", "My Long Entry Id",profit = 10, loss=2)
+strategy.exit("exit", "My Short Entry Id",profit = 10, loss=2)

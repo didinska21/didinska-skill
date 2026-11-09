@@ -1,0 +1,44 @@
+/*backtest
+start: 2022-11-09 00:00:00
+end: 2023-11-15 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Robrecht99
+
+//@version=5
+strategy("My Strategy", overlay=true, margin_long=100, margin_short=100)
+
+fast = ta.sma(close, 8)
+slow = ta.sma(close, 32)
+
+plot(fast, color=color.red)
+plot(slow, color=color.navy)
+
+entrycondition1 = ta.crossover(fast, slow)
+entrycondition2 = fast > slow
+sellcondition1 = ta.crossunder(fast, slow)
+sellcondition2 = slow > fast
+
+atr = ta.atr(14)
+
+//Donchian Channels
+days = 20
+h1 = ta.highest(high[1], days)
+l1 = ta.lowest(low[1], days)
+mid = math.avg(h1, l1)
+plot(mid, "channel", color=#FF6D00)
+u = plot(h1, "Upper", color=#2962FF)
+l = plot(l1, "Lower", color=#2962FF)
+fill(u, l, color.new(color.blue, 90))
+
+if (close > h1 and entrycondition2)
+    strategy.entry("long", strategy.long)
+    stoploss = close - atr * 3
+    trail = close - atr * 3
+    strategy.exit("exit", "long", stop=stoploss, trail_offset=trail)
+if (sellcondition1 and sellcondition2)
+    strategy.close(id="long")

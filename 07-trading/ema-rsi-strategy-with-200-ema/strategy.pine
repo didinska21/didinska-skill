@@ -1,0 +1,50 @@
+/*backtest
+start: 2023-06-11 00:00:00
+end: 2024-06-16 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © fitradn
+//@version=4
+//@version=4
+strategy("EMA & RSI Strategy with 200 EMA", shorttitle="EMARSI200", overlay=true)
+
+// Input for EMAs
+shortEmaLength = input(4, title="Short EMA Length")
+longEmaLength = input(12, title="Long EMA Length")
+longTermEmaLength = input(48, title="Long Term EMA Length")
+
+// Calculate EMAs
+shortEma = ema(close, shortEmaLength)
+longEma = ema(close, longEmaLength)
+longTermEma = ema(close, longTermEmaLength)
+
+// Plot EMAs
+plot(shortEma, color=color.blue, title="Short EMA")
+plot(longEma, color=color.red, title="Long EMA")
+plot(longTermEma, color=color.orange, title="200 EMA")
+
+// Input for RSI
+rsiLength = input(14, title="RSI Length")
+overbought = input(70, title="Overbought Level")
+oversold = input(30, title="Oversold Level")
+
+// Calculate RSI
+rsi = rsi(close, rsiLength)
+
+// Buy and Sell Conditions
+buySignal = crossover(shortEma, longEma) and rsi < overbought and close > longTermEma
+sellSignal = crossunder(shortEma, longEma) and rsi > oversold and close < longTermEma
+
+// Execute Trades
+if (buySignal)
+    strategy.entry("Buy", strategy.long)
+if (sellSignal)
+    strategy.entry("Sell", strategy.short)
+
+// Plot Buy and Sell Signals
+plotshape(series=buySignal, location=location.belowbar, color=color.green, style=shape.labelup, title="Buy Signal")
+plotshape(series=sellSignal, location=location.abovebar, color=color.red, style=shape.labeldown, title="Sell Signal")

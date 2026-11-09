@@ -1,0 +1,35 @@
+/*backtest
+start: 2023-12-29 00:00:00
+end: 2024-01-28 00:00:00
+period: 3h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("trend_hunter", overlay=true)
+
+length = input(20, title="ATR Length")
+numATRs = input(0.75, title="ATR Multiplier")
+atrs = ta.sma(ta.tr, length) * numATRs
+
+// Trend Filter
+smaPeriod = input(32, title="SMA Period")
+sma = ta.sma(close, smaPeriod)
+
+// MACD Filter
+macdShortTerm = input(12, title="MACD Short Term")
+macdLongTerm = input(26, title="MACD Long Term")
+macdSignalSmoothing = input(9, title="MACD Signal Smoothing")
+
+[macdLine, signalLine, _] = ta.macd(close, macdShortTerm, macdLongTerm, macdSignalSmoothing)
+
+// Long Entry with Trend and MACD Filter
+longCondition = close > sma and close[1] <= sma[1] and macdLine > signalLine
+strategy.entry("Long", strategy.long, stop=close + atrs, when=longCondition, comment="Long")
+
+// Short Entry with Trend and MACD Filter
+shortCondition = close < sma and close[1] >= sma[1] and macdLine < signalLine
+strategy.entry("Short", strategy.short, stop=close - atrs, when=shortCondition, comment="Short")
+
+//plot(strategy.equity, title="equity", color=color.red, linewidth=2, style=plot.style_area)

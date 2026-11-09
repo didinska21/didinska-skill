@@ -1,0 +1,97 @@
+/*backtest
+start: 2025-02-01 00:00:00
+end: 2025-03-31 00:00:00
+period: 1h
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("US30 1-min Strategy with TP/SL, Grades, Alerts", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// === Inputs ===
+rsiLength     = input.int(9, title="RSI Length")
+maLength      = input.int(20, title="MA Length (SMA & EMA)")
+ema200Length  = input.int(200, title="200 EMA Length")
+tpPerc        = input.float(0.5, title="Take Profit %", step=0.1)
+slPerc        = input.float(0.3, title="Stop Loss %", step=0.1)
+
+// Grade filters
+allowA        = input.bool(true, title="Trade A-Grade Setups")
+allowB        = input.bool(true, title="Trade B-Grade Setups")
+allowC        = input.bool(false, title="Trade C-Grade Setups")
+
+// === Indicators ===
+rsi = ta.rsi(close, rsiLength)
+sma = ta.sma(close, maLength)
+ema = ta.ema(close, maLength)
+ema200 = ta.ema(close, ema200Length)
+volumeRising = volume > volume[1]
+
+// === Candle Size Helpers ===
+avgBody = ta.sma(math.abs(close - open), 20)
+candleBody = math.abs(close - open)
+candleLarge = candleBody > avgBody
+candleVeryLarge = candleBody > avgBody * 2
+
+// === Setup Grade Conditions ===
+gradeA = candleVeryLarge and volumeRising and rsi > 55 or rsi < 45
+gradeB = candleLarge and volumeRising
+gradeC = candleLarge
+
+// === Setup Conditions ===
+// --- Long ---
+longBase = close > ema200 and ta.crossover(ema, sma) and rsi > 50 and close > ema and close > sma
+// --- Short ---
+shortBase = close < ema200 and ta.crossunder(ema, sma) and rsi < 50 and close < ema and close < sma
+
+// === Determine Grade ===
+setupGrade = ""
+isTrade = false
+
+if longBase
+    if gradeA and allowA
+        setupGrade := "A"
+        isTrade := true
+    else if gradeB and allowB
+        setupGrade := "B"
+        isTrade := true
+    else if gradeC and allowC
+        setupGrade := "C"
+        isTrade := true
+
+if shortBase
+    if gradeA and allowA
+        setupGrade := "A"
+        isTrade := true
+    else if gradeB and allowB
+        setupGrade := "B"
+        isTrade := true
+    else if gradeC and allowC
+        setupGrade := "C"
+        isTrade := true
+
+// === Entry & TP/SL ===
+longTP = close * (1 + tpPerc / 100)
+longSL = close * (1 - slPerc / 100)
+shortTP = close * (1 - tpPerc / 100)
+shortSL = close * (1 + slPerc / 100)
+
+// Entry
+if longBase and isTrade and (setupGrade == "A" or setupGrade == "B" or setupGrade == "C")
+    strategy.entry("Long " + setupGrade, strategy.long)
+    strategy.exit("TP/SL", "Long " + setupGrade, limit=longTP, stop=longSL)
+    label.new(bar_index, high, "Long " + setupGrade, style=label.style_label_up, color=color.green, textcolor=color.white)
+    alert("LONG " + setupGrade + " setup triggered!", alert.freq_once_per_bar)
+
+if shortBase and isTrade and (setupGrade == "A" or setupGrade == "B" or setupGrade == "C")
+    strategy.entry("Short " + setupGrade, strategy.short)
+    strategy.exit("TP/SL", "Short " + setupGrade, limit=shortTP, stop=shortSL)
+    label.new(bar_index, low, "Short " + setupGrade, style=label.style_label_down, color=color.red, textcolor=color.white)
+    alert("SHORT " + setupGrade + " setup triggered!", alert.freq_once_per_bar)
+
+
+// === Plotting MAs ===
+plot(ema, title="20 EMA", color=color.red)
+plot(sma, title="20 SMA", color=color.blue)
+plot(ema200, title="200 EMA", color=color.green)

@@ -1,0 +1,37 @@
+/*backtest
+start: 2023-11-12 00:00:00
+end: 2023-12-12 00:00:00
+period: 1h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("MA Strategy", overlay=true)
+
+// Input parameters
+fastLength = input(9, title="Fast MA Length")
+slowLength = input(21, title="Slow MA Length")
+
+// Calculate moving averages
+fastMA = ta.sma(close, fastLength)
+slowMA = ta.sma(close, slowLength)
+
+// Plot moving averages
+plot(fastMA, color=color.blue, title="Fast MA")
+plot(slowMA, color=color.red, title="Slow MA")
+
+// Strategy conditions
+longCondition = ta.crossover(fastMA, slowMA)
+shortCondition = ta.crossunder(fastMA, slowMA)
+
+// Strategy orders
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+
+// Plot entry signals
+plotshape(series=longCondition, title="Buy Signal", color=color.green, style=shape.triangleup, size=size.small)
+plotshape(series=shortCondition, title="Sell Signal", color=color.red, style=shape.triangledown, size=size.small)

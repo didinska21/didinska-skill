@@ -1,0 +1,50 @@
+/*backtest
+start: 2023-03-09 00:00:00
+end: 2024-03-14 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy('AI Trend Predictor', overlay=false)
+
+
+length_A = input(24, title='Length of K-line A')
+length_B = input(192, title='Length of K-line B')
+length_C = input(10, title='Length of K-line C')
+future_length = input(5, title='Length of future K-line')
+
+
+A_close = close
+B_close = ta.sma(close, length_B)
+C_close = ta.sma(B_close, length_C)
+
+
+A_diff = high - low
+B_diff = high - low
+C_diff = high - low
+
+
+C_avg_diff = ta.sma(C_diff, length_C)
+
+
+correlation = ta.correlation(C_diff, C_diff[1], length_C)
+
+
+probability = correlation > 0 ? 1 : 0
+
+
+D = ta.sma(probability, length_C)
+
+
+future_close = close[future_length]
+probability_up = close > future_close ? 1 : 0
+
+
+plot(D, color=color.new(color.blue, 0), title='D')
+plot(probability_up, color=color.new(color.red, 0), title='Probability of Closing Up')
+
+
+strategy.entry('Buy', strategy.long, when=D > 0.51 and ta.crossover(close, B_close))
+strategy.entry('Sell', strategy.short, when=D < 0.51 and ta.crossunder(close, B_close))

@@ -1,0 +1,90 @@
+/*backtest
+start: 2025-01-20 00:00:00
+end: 2025-02-19 00:00:00
+period: 1h
+basePeriod: 1h
+exchanges: [{"eid":"Binance","currency":"ETH_USDT"}]
+*/
+
+//@version=6  
+strategy("VRS Strategy", overlay=true)  
+
+// Calculate VWAP  
+vwapValue = ta.vwap(close)  
+
+// Calculate standard deviation for the bands  
+stdDev = ta.stdev(close, 20) // 20-period standard deviation for bands  
+upperBand = vwapValue + stdDev  
+lowerBand = vwapValue - stdDev  
+
+// Plot VWAP and its bands  
+plot(vwapValue, color=color.blue, title="VWAP", linewidth=2)  
+plot(upperBand, color=color.new(color.green, 0), title="Upper Band", linewidth=2)  
+plot(lowerBand, color=color.new(color.red, 0), title="Lower Band", linewidth=2)  
+
+// Signal Conditions  
+var float previousGreenCandleHigh = na  
+var float previousGreenCandleLow = na  
+var float previousRedCandleLow = na  
+
+// Detect bearish candle close below lower band  
+bearishCloseBelowLower = close[1] < lowerBand and close[1] < open[1]  
+
+// Detect bullish reversal candle after a bearish close below lower band  
+bullishCandle = close > open and low < lowerBand // Ensure it's near the lower band  
+candleReversalCondition = bearishCloseBelowLower and bullishCandle  
+
+if (candleReversalCondition)  
+    previousGreenCandleHigh := high[1]  // Capture the high of the previous green candle  
+    previousGreenCandleLow := low[1]     // Capture the low of the previous green candle  
+    previousRedCandleLow := na            // Reset previous red candle low  
+
+// Buy entry condition: next candle breaks the high of the previous green candle  
+buyEntryCondition = not na(previousGreenCandleHigh) and close > previousGreenCandleHigh  
+
+if (buyEntryCondition)  
+    // Set stop loss below the previous green candle  
+    stopLoss = previousGreenCandleLow   
+    risk = close - stopLoss // Calculate risk for position sizing  
+
+    // Target Levels  
+    target1 = vwapValue // Target 1 is at VWAP  
+    target2 = upperBand  // Target 2 is at the upper band  
+
+    // Ensure we only enter the trade near the lower band  
+    if (close < lowerBand)  
+        strategy.entry("Buy", strategy.long)  
+        
+        // Set exit conditions based on targets  
+        strategy.exit("Take Profit 1", from_entry="Buy", limit=target1)  
+        strategy.exit("Take Profit 2", from_entry="Buy", limit=target2)  
+        strategy.exit("Stop Loss", from_entry="Buy", stop=stopLoss)  
+
+// Sell signal condition: Wait for a bearish candle near the upper band  
+bearishCandle = close < open and high > upperBand // A bearish candle should be formed near the upper band  
+sellSignalCondition = bearishCandle  
+
+if (sellSignalCondition)  
+    previousRedCandleLow := low[1] // Capture the low of the current bearish candle  
+
+    // Sell entry condition: next candle breaks the low of the previous bearish candle  
+    sellEntryCondition = not na(previousRedCandleLow) and close < previousRedCandleLow  
+
+    if (sellEntryCondition)  
+        // Set stop loss above the previous bearish candle  
+        stopLossSell = previousRedCandleLow + (high[1] - previousRedCandleLow) // Set stop loss above the bearish candle  
+        targetSell = lowerBand // Target for sell is at the lower band  
+
+        // Ensure we only enter the trade near the upper band  
+        if (close > upperBand)  
+            strategy.entry("Sell", strategy.short)  
+            
+            // Set exit conditions for sell  
+            strategy.exit("Take Profit Sell", from_entry="Sell", limit=targetSell)  
+            strategy.exit("Stop Loss Sell", from_entry="Sell", stop=stopLossSell)  
+
+// Reset previous values when a trade occurs  
+if (strategy.position_size > 0)  
+    previousGreenCandleHigh := na  
+    previousGreenCandleLow := na  
+    previousRedCandleLow := na

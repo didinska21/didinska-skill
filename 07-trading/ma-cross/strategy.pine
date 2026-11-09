@@ -1,0 +1,39 @@
+/*backtest
+start: 2023-03-22 00:00:00
+end: 2024-03-27 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © j0secyn
+
+//@version=5
+strategy("MA Cross", overlay=true, margin_long=100, margin_short=100, default_qty_value=100, default_qty_type=strategy.percent_of_equity, initial_capital=10000)
+
+// === INPUT BACKTEST RANGE ===
+fromDay   = input.int(defval = 1, title = "From Day", minval = 1, maxval = 31)
+fromMonth = input.int(defval = 1, title = "From Month", minval = 1, maxval = 12)
+fromYear  = input.int(defval = 2018,title = "From Year", minval = 1970)
+thruDay   = input.int(defval = 30, title = "Thru Day", minval = 1, maxval = 31)
+thruMonth = input.int(defval = 9, title = "Thru Month", minval = 1, maxval = 12)
+thruYear  = input.int(defval = 2024, title = "Thru Year", minval = 1970)
+
+slow_ma_length = input.int(defval = 100, title = "Slow MA lenght")
+fast_ma_length = input.int(defval = 30, title = "Fast MA lenght")
+
+// === FUNCTION EXAMPLE ===
+start     = timestamp(fromYear, fromMonth, fromDay, 00, 00)            // backtest start  window
+finish    = timestamp(thruYear, thruMonth, thruDay, 23, 59)            // backtest finish window
+window()  => true
+
+// === LOGIC ===
+crossOv = ta.crossover(ta.sma(close, fast_ma_length), ta.sma(close, slow_ma_length))
+crossUn = ta.crossunder(ta.sma(close, fast_ma_length), ta.sma(close, slow_ma_length))
+
+// === EXECUTION ===
+// strategy.entry("L", strategy.long, when = window() and crossOv)        // enter long when "within window of time" AND crossover
+// strategy.close("L", when = window() and crossUn)                       // exits long when "within window of time" AND crossunder         
+strategy.entry("L", strategy.long, when = window() and crossOv)        // enter long when "within window of time" AND crossover
+strategy.close("L", when = window() and crossUn)                       // exits long when "within window of time" AND crossunder         

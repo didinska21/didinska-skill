@@ -1,0 +1,54 @@
+/*backtest
+start: 2022-12-04 00:00:00
+end: 2023-12-10 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("EMA SuperTrend Strategy", overlay=true)
+
+// SuperTrend EMA Settings
+length = input.int(10, title="SuperTrend Length")
+mult = input.float(2.0, title="Multiplier")
+emaLength = input.int(34, title="EMA UpTrend", minval=1, maxval=300)
+
+// EMA calculation for EMA Trend Bars
+ema1 = input.int(34, title="EMA UpTrend", minval=1, maxval=300)
+shema = input(true, title="Show EMA Trend is Based On?")
+
+usedEma = ta.ema(close, ema1)
+
+// EMA Trend Bars color
+emaUpColor() => hlc3 >= usedEma
+emaDownColor() => hlc3 < usedEma
+col = hlc3 >= usedEma ? color.lime : hlc3 < usedEma ? color.red : color.white
+
+// SuperTrend calculation
+atrPeriod = int(mult)
+[supertrend, direction] = ta.supertrend(length, atrPeriod)
+
+// Entry conditions
+longEntry = ta.crossover(close, supertrend) and close > usedEma
+shortEntry = ta.crossunder(close, supertrend) and close < usedEma
+
+// Exit conditions
+longExit = ta.crossunder(close, supertrend) or close < usedEma
+shortExit = ta.crossover(close, supertrend) or close > usedEma
+
+// Execute trades
+if (longEntry)
+    strategy.entry("Buy", strategy.long)
+
+if (longExit)
+    strategy.close("Buy")
+
+if (shortEntry)
+    strategy.entry("Sell", strategy.short)
+
+if (shortExit)
+    strategy.close("Sell")
+
+// Plotting
+plot(shema and usedEma ? usedEma : na, title="EMA", style=plot.style_line, linewidth=3, color=col)

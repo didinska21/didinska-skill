@@ -1,0 +1,35 @@
+/*backtest
+start: 2022-09-20 00:00:00
+end: 2023-09-20 00:00:00
+period: 2d
+basePeriod: 1d
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © ceyhun
+
+//@version=4
+strategy("KPL Swing Strategy", overlay=true)
+
+no = input(20)
+res = highest(high, no)
+sup = lowest(low, no)
+avd = iff(close > res[1], 1, iff(close < sup[1], -1, 0))
+avn = valuewhen(avd != 0, avd, 1)
+tsl = iff(avn == 1, sup, res)
+sl = iff(close > tsl, highest(lowest(low, no / 2), no / 2), lowest(highest(high, no / 2), no / 2))
+
+plot(tsl, color=#0000FF,title="KPL Swing")
+plot(sl,  color=color.white,title="Stoploss")
+
+bgcolor(abs(close - tsl[1]) > close ? color.white : close < tsl ? color.red : color.green, 90, offset=0)
+
+if crossover(close, tsl)
+    strategy.entry("Long", strategy.long, comment="Long")
+
+if crossunder(close,tsl)
+    strategy.entry("Short", strategy.short, comment="Short")
+    
+    
+    

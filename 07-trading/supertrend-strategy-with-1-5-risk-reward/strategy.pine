@@ -1,0 +1,40 @@
+/*backtest
+start: 2024-05-01 00:00:00
+end: 2024-05-31 23:59:59
+period: 1h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("Supertrend Strategy with 1:5 Risk Reward", overlay=true)
+
+// Supertrend Indicator
+factor = input(3.0, title="ATR Factor")
+atrLength = input(10, title="ATR Length")
+
+[supertrendUp, supertrendDown] = ta.supertrend(factor, atrLength)
+
+supertrend = ta.crossover(ta.lowest(close, 1), supertrendDown) ? supertrendDown : supertrendUp
+
+plot(supertrend, title="Supertrend", color=supertrend == supertrendUp ? color.green : color.red, linewidth=2, style=plot.style_line)
+
+// Strategy parameters
+risk = input(1.0, title="Risk in %")
+reward = input(5.0, title="Reward in %")
+riskRewardRatio = reward / risk
+
+// Entry and exit conditions
+longCondition = ta.crossover(close, supertrendUp)
+if (longCondition)
+    // Calculate stop loss and take profit levels
+    stopLossPrice = close * (1 - (risk / 100))
+    takeProfitPrice = close * (1 + (reward / 100))
+    
+    // Submit long order
+    strategy.entry("Long", strategy.long, stop=stopLossPrice, limit=takeProfitPrice)
+
+// Exit conditions
+shortCondition = ta.crossunder(close, supertrendDown)
+if (shortCondition)
+    strategy.close("Long")

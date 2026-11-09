@@ -1,0 +1,69 @@
+/*backtest
+start: 2023-06-15 00:00:00
+end: 2024-06-20 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//Estrategia de reversión a la media elaborada por Javier Sanjuán basada en la estrategia del RSI de dos periodos creada por Larry Connors.
+//Los parámetros de la misma deben ajustarse a cada activo y temporalidad previo estudio de backtesting.
+//A continuación muestro algunas configuraciones con las que se ha aplicado con éxito:
+//De izquierda a derecha: temporalidad, periodos de las correspondientes medias móviles, zonas de sobrecompra y sobreventa del RSI de 2 periodos, stop loss recomendado y apalancamiento máximo permitido para cada activo.
+//US100/USDT: 4h. EMAs (15, 350), RSI2 (25, 80), SL 7%, APx10.
+//DAX/USDT: 4h, EMAs (45, 400), RSI2 (25, 70), SL 10%, AP x8.
+//BTCUSDT: 1h, EMAs (10,400), RSI2 (10, 90), SL 10%, AP x7.
+//XRPUSDT: 1h, EMAs (17, 400), RSI2 (20, 80), SL 14%, AP x5.
+//XMRUSDT: 1h, EMAs (50, 400), RSI2 (30, 70), SL 13%, AP X5.
+//ZECUSDT: 1h, EMAs (77, 400), RSI2 (30, 70), SL 13%, AP x5.
+//Los parámetros deben modificarse cada pocos años para ajustarse a las condiciones cambiantes del mercado.
+//Actualmente, vengo aplicándola sólo al mercado de las criptomonedas arriba indicadas desde enero 2023 hasta mayo 2024 con solo un mes en negativo y una rentabilidad media mensual del 26.24%.
+
+//@version=5
+strategy("Estrategia JSV", overlay=true)
+
+// Parámetros de la estrategia
+rsiPeriod = input.int(2, title="Periodo del RSI")
+rsiOverbought = input.int(90, title="Zona de Sobrecompra del RSI", minval=50, maxval=100)
+rsiOversold = input.int(10, title="Zona de Sobreventa del RSI", minval=0, maxval=50)
+fastLength = input.int(10, title="Periodo de la Media Móvil Exponencial Rápida")
+slowLength = input.int(400, title="Periodo de la Media Móvil Exponencial Lenta")
+stopLossPerc = input.float(1.0, title="Stop Loss (%)")
+
+// Indicadores
+rsi = ta.rsi(close, rsiPeriod)
+emaFast = ta.ema(close, fastLength)
+emaSlow = ta.ema(close, slowLength)
+
+// Señales de entrada y salida
+longCondition = (close > emaSlow) and (close < emaFast) and (ta.crossover(rsi, rsiOversold))
+shortCondition = (close < emaSlow) and (close > emaFast) and (ta.crossunder(rsi, rsiOverbought))
+exitLongCondition = ta.crossover(close, emaFast)
+exitShortCondition = ta.crossunder(close, emaFast)
+
+// Estrategia Long
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+    // Cálculo del Stop Loss
+    strategy.exit("Exit Long", "Long", stop=close * (1 - stopLossPerc / 100))
+
+// Estrategia Short
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+    // Cálculo del Stop Loss
+    strategy.exit("Exit Short", "Short", stop=close * (1 + stopLossPerc / 100))
+
+// Salida de la posición cuando se cruza la media rápida
+if (exitLongCondition)
+    strategy.close("Long")
+
+if (exitShortCondition)
+    strategy.close("Short")
+
+// Marcas de entrada en el gráfico
+plotshape(series=longCondition, title="Long Entry", location=location.belowbar, color=color.green, style=shape.triangleup)
+plotshape(series=shortCondition, title="Short Entry", location=location.abovebar, color=color.red, style=shape.triangledown)
+
+// Plot de las medias móviles
+plot(emaFast, title="EMA Rápida", color=color.rgb(228, 177, 102))
+plot(emaSlow, title="EMA Lenta", color=color.rgb(193, 122, 0))

@@ -1,0 +1,58 @@
+/*backtest
+start: 2025-02-10 00:00:00
+end: 2025-02-17 00:00:00
+period: 3m
+basePeriod: 3m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("XAUUSD 15m Trend Strategy", overlay=true, margin_long=100, margin_short=100)
+
+// Input parameters
+emaFast = input.int(50, "Fast EMA Period", minval=1)
+emaSlow = input.int(200, "Slow EMA Period", minval=1)
+adxThreshold = input.int(25, "ADX Threshold", minval=1)
+lookback = input.int(5, "Swing Lookback Period", minval=1)
+riskReward = input.float(1.5, "Risk Reward Ratio", minval=1.0)
+
+// Calculate indicators
+ema50 = ta.ema(close, emaFast)
+ema200 = ta.ema(close, emaSlow)
+[diPlus, diMinus, adx] = ta.dmi(14, 14)
+atr = ta.atr(14)
+
+// Trend conditions
+uptrend = ema50 > ema200 and adx >= adxThreshold and diPlus > diMinus
+downtrend = ema50 < ema200 and adx >= adxThreshold and diMinus > diPlus
+
+// Entry conditions
+longCondition = uptrend and ta.crossover(close, ema50)
+shortCondition = downtrend and ta.crossunder(close, ema50)
+
+// Calculate risk levels
+longStop = ta.lowest(low, lookback) - atr * 0.5
+longProfit = close + (close - longStop) * riskReward
+shortStop = ta.highest(high, lookback) + atr * 0.5
+shortProfit = close - (shortStop - close) * riskReward
+
+// Execute trades
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+    strategy.exit("Exit Long", "Long", stop=longStop, limit=longProfit)
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+    strategy.exit("Exit Short", "Short", stop=shortStop, limit=shortProfit)
+
+// Plotting
+plot(ema50, "EMA 50", color=color.blue)
+plot(ema200, "EMA 200", color=color.orange)
+plot(strategy.position_size > 0 ? longStop : na, "Long Stop", color=color.red, style=plot.style_linebr)
+plot(strategy.position_size > 0 ? longProfit : na, "Long Target", color=color.green, style=plot.style_linebr)
+plot(strategy.position_size < 0 ? shortStop : na, "Short Stop", color=color.red, style=plot.style_linebr)
+plot(strategy.position_size < 0 ? shortProfit : na, "Short Target", color=color.green, style=plot.style_linebr)
+
+// Signal markers
+plotshape(longCondition, "Buy Signal", shape.triangleup, location.belowbar, color=color.green, size=size.small)
+plotshape(shortCondition, "Sell Signal", shape.triangledown, location.abovebar, color=color.red, size=size.small)

@@ -1,0 +1,38 @@
+/*backtest
+start: 2023-05-05 00:00:00
+end: 2024-05-10 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=4
+strategy("MACD Strategy", overlay=true)
+
+// Define MACD
+[macdLine, signalLine, _] = macd(close, 12, 26, 9)
+
+// Define conditions for long entry
+longCondition = crossover(macdLine, signalLine)
+
+// Define conditions for short entry
+shortCondition = crossunder(macdLine, signalLine)
+
+// Define stop loss for long entry
+longStopLoss = low[1]  // Previous candle low
+
+// Define stop loss for short entry
+shortStopLoss = high[1]  // Previous candle high
+
+// Define take profit for both long and short entries
+takeProfit = close + (close - longStopLoss) * 4  // 4 x ATR
+
+// Execute long entry
+if (longCondition)
+    strategy.entry("Buy", strategy.long)
+    strategy.exit("TP/SL", "Buy", stop=longStopLoss, limit=takeProfit)
+
+// Execute short entry
+if (shortCondition)
+    strategy.entry("Sell", strategy.short)
+    strategy.exit("TP/SL", "Sell", stop=shortStopLoss, limit=takeProfit)

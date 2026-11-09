@@ -1,0 +1,48 @@
+/*backtest
+start: 2024-03-14 00:00:00
+end: 2024-11-27 00:00:00
+period: 1h
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("TRH Backtest SMA ATR Variable RR", overlay=true)
+
+// SMA Settings
+sma7 = ta.sma(close, 7)
+sma25 = ta.sma(close, 25)
+sma99 = ta.sma(close, 99)
+
+// ATR Settings
+atrLength = input.int(14, title="ATR Length")
+atrMultiplier = input.float(1.0, title="ATR Multiplier")
+atr = ta.atr(atrLength) * atrMultiplier
+
+// Entry and Exit Conditions
+longCondition = ta.crossover(sma7, sma25) and close > sma99
+shortCondition = ta.crossunder(sma7, sma25) and close < sma99
+longCross = ta.crossover(sma7, sma99) or ta.crossover(sma7, sma25)
+shortCross = ta.crossunder(sma7, sma99) or ta.crossunder(sma7, sma25)
+
+// Trade Execution
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+
+// Variable Risk Reward
+riskRewardRatio = 2.0
+if (longCross or shortCross)
+    riskRewardRatio = 6.0
+
+// ATR Based Stop Loss and Take Profit
+longStopLoss = low - atr
+shortStopLoss = high + atr
+longTakeProfit = close + (atr * riskRewardRatio)
+shortTakeProfit = close - (atr * riskRewardRatio)
+
+// Apply Stop Loss and Take Profit
+strategy.exit("Exit Long", "Long", stop=longStopLoss, limit=longTakeProfit)
+strategy.exit("Exit Short", "Short", stop=shortStopLoss, limit=shortTakeProfit)

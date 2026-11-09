@@ -1,0 +1,30 @@
+/*backtest
+start: 2022-09-11 00:00:00
+end: 2022-11-12 00:00:00
+period: 4h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=2
+//Sonic R
+// strategy("SonicR",shorttitle="Sonic R",overlay=true,default_qty_value=10000,initial_capital=1000,currency=currency.USD)
+EMA = input(defval=89, title="EMA Signal")
+HiLoLen     = input(34, minval=2,title="High Low channel Length")
+pacC        = ema(close,HiLoLen)
+pacL        = ema(low,HiLoLen)
+pacH        = ema(high,HiLoLen)
+DODGERBLUE = #1E90FFFF
+// Plot the Price Action Channel (PAC) base on EMA high,low and close
+L=plot(pacL, color=DODGERBLUE, linewidth=1, title="High PAC EMA",transp=50)
+H=plot(pacH, color=DODGERBLUE, linewidth=1, title="Low PAC EMA",transp=50)
+C=plot(pacC, color=DODGERBLUE, linewidth=2, title="Close PAC EMA",transp=0)
+fill(L,H, color=aqua,transp=90,title="Fill HiLo PAC")
+//Moving Average
+signalMA =ema(close,EMA)
+plot(signalMA,title="EMA Signal",color=white,linewidth=4,style=line)
+//Strategy
+goLong() => crossover(pacC,signalMA)
+strategy.entry(id = "Go to Buy", long = true, when = goLong())
+goShort() => crossunder(pacC,signalMA)
+strategy.entry(id = "Go to Sell", long = false, when = goShort())

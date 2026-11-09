@@ -1,0 +1,40 @@
+/*backtest
+start: 2023-01-25 00:00:00
+end: 2024-01-31 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("Breakout Strategy", shorttitle="BS", overlay=true)
+
+// Input for take profit and stop loss in pips
+tp_pips = input(50, title="Take Profit (in pips)")
+sl_pips = input(100, title="Stop Loss (in pips)")
+
+// Calculate take profit and stop loss levels in points
+tp_level = tp_pips * syminfo.mintick
+sl_level = sl_pips * syminfo.mintick
+
+// Function to check if a breakout has occurred
+breakout(high_or_low) =>
+    high_or_low > request.security(syminfo.tickerid, "D", high[1]) ? true : false
+
+// Buy condition
+buy_condition = breakout(high)
+strategy.entry("Buy", strategy.long, when=buy_condition)
+
+// Sell condition
+sell_condition = breakout(low)
+strategy.entry("Sell", strategy.short, when=sell_condition)
+
+// Take profit and stop loss conditions for Buy
+tp_buy_condition = strategy.position_avg_price + tp_level
+sl_buy_condition = strategy.position_avg_price - sl_level
+strategy.exit("Take Profit/Close Buy", from_entry="Buy", profit=tp_buy_condition, loss=sl_buy_condition)
+
+// Take profit and stop loss conditions for Sell
+tp_sell_condition = strategy.position_avg_price - tp_level
+sl_sell_condition = strategy.position_avg_price + sl_level
+strategy.exit("Take Profit/Close Sell", from_entry="Sell", profit=tp_sell_condition, loss=sl_sell_condition)

@@ -1,0 +1,49 @@
+/*backtest
+start: 2024-03-28 00:00:00
+end: 2025-03-27 00:00:00
+period: 1h
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"ETH_USDT"}]
+*/
+
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © SwissyTrader
+
+//@version=6
+strategy("KumoBreakLong", overlay=true, fill_orders_on_standard_ohlc=true)
+
+//=== Parameters ===//
+lenTenkan = input.int(9, title="Tenkan-Sen (Conversion Line) Length")
+lenKijun  = input.int(26, title="Kijun-Sen (Base Line) Length")
+lenSenkou = input.int(52, title="Senkou Span B Length")
+
+//=== Ichimoku Calculation ===//
+// Tenkan-Sen (Conversion Line)
+tenkan = (ta.highest(high, lenTenkan) + ta.lowest(low, lenTenkan)) / 2
+// Kijun-Sen (Base Line)
+kijun  = (ta.highest(high, lenKijun) + ta.lowest(low, lenKijun)) / 2
+// Senkou Span A (Leading Span A)
+senkouA = (tenkan + kijun) / 2
+// Senkou Span B (Leading Span B)
+senkouB = (ta.highest(high, lenSenkou) + ta.lowest(low, lenSenkou)) / 2
+
+// Current "Kumo" Boundaries
+cloudTop    = math.max(senkouA, senkouB)  // Upper cloud boundary
+cloudBottom = math.min(senkouA, senkouB)  // Lower cloud boundary
+
+//=== Signals ===//
+// Long condition: Price crosses above the Kumo cloud
+longCondition = ta.crossover(close, cloudTop)
+
+// Exit condition: Price crosses below the lower cloud boundary
+exitCondition = ta.crossunder(close, cloudBottom)
+
+//=== Position Triggers ===//
+
+//longCondition = ta.crossover(ta.sma(close, 14), ta.sma(close, 28))
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+
+shortCondition = ta.crossunder(ta.sma(close, 14), ta.sma(close, 28))
+if (shortCondition)
+    strategy.entry("Short", strategy.short)

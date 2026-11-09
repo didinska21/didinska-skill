@@ -1,0 +1,63 @@
+{
+  "name": "aero-vote-radar",
+  "version": "0.2.1",
+  "description": "MCP server + CLI that ranks Aero (formerly Aerodrome) pools by what your sAERO earns a day after dilution, across Aero's 7 networks, suggests a split and reads your stakes' 47 h timers.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.18.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/araxis33/aero-vote-radar.git"
+  },
+  "homepage": "https://github.com/araxis33/aero-vote-radar#readme",
+  "bugs": {
+    "url": "https://github.com/araxis33/aero-vote-radar/issues"
+  },
+  "keywords": [
+    "aero",
+    "aerodrome",
+    "sAERO",
+    "base",
+    "mcp",
+    "defi",
+    "ai-agent"
+  ],
+  "bin": {
+    "aero-vote-radar": "dist/cli.js",
+    "aero-vote-radar-mcp": "dist/mcp-server.js"
+  },
+  "files": [
+    "dist",
+    "SKILL.md"
+  ],
+  "scripts": {
+    "prepare": "npm run build",
+    "build": "tsc",
+    "typecheck": "tsc -p tsconfig.typecheck.json",
+    "cli": "tsx src/cli.ts",
+    "mcp": "tsx src/mcp-server.ts",
+    "v3scan": "tsx src/v3-cli.ts",
+    "test": "node --import tsx --test test/**/*.test.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "viem": "^2.55.2",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "tsx": "^4.23.1",
+    "typescript": "^7.0.2"
+  },
+  "overrides": {
+    "fast-uri": "^3.1.9",
+    "qs": "^6.17.0",
+    "hono": "^4.13.11",
+    "@hono/node-server": "^2.1.3",
+    "ip-address": "^10.7.4",
+    "proxy-addr": "^2.0.8",
+    "body-parser": "^2.4.0"
+  }
+}

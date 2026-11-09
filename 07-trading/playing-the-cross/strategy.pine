@@ -1,0 +1,33 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Glenn234
+
+//@version=5
+indicator("Playing the cross", shorttitle="PtC", overlay=true)
+
+// Ichimoku code - Kijun-Sen
+basePeriods = input.int(26, minval=1, title="Kijun-Sen length")
+donchian(len) => math.avg(ta.lowest(len), ta.highest(len))
+
+KijunSen = donchian(basePeriods)
+plot(KijunSen, color=color.green, title="Kijun-Sen")
+
+
+// Moving Average Exponential code
+len = input.int(55, minval=1, title="EMA length")
+src = input(close, title="Source")
+
+MovingAverage = ta.ema(src, len)
+plot(MovingAverage, title="EMA", color=color.red)
+
+
+// Cross code
+Up = MovingAverage > KijunSen and MovingAverage[1] < KijunSen[1]
+Down = MovingAverage < KijunSen and MovingAverage[1] > KijunSen[1]
+
+bgcolor(Up ? color.new(color.green, 60) : na, title="Up Cross")
+bgcolor(Down ? color.new(color.red, 60) : na, title="Down Cross")
+
+if Down
+    strategy.entry("Enter Long", strategy.long)
+else if Up
+    strategy.entry("Enter Short", strategy.short)

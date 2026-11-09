@@ -1,0 +1,50 @@
+/*backtest
+start: 2025-03-07 00:00:00
+end: 2025-04-06 00:00:00
+period: 15m
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"ETH_USDT"}]
+*/
+
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © ErayPala
+
+//@version=6
+strategy("RSI + MACD Strategy (15min)", overlay=false, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// === INPUTS ===
+rsiLength = input.int(14, title="RSI Length")
+rsiOverbought = input.int(70, title="RSI Overbought Level")
+rsiOversold = input.int(30, title="RSI Oversold Level")
+
+macdFast = input.int(12, title="MACD Fast Length")
+macdSlow = input.int(26, title="MACD Slow Length")
+macdSignal = input.int(9, title="MACD Signal Smoothing")
+
+takeProfitPerc = input.float(5.0, title="Take Profit (%)") / 100
+stopLossPerc = input.float(2.0, title="Stop Loss (%)") / 100
+
+// === INDICATORS ===
+rsi = ta.rsi(close, rsiLength)
+[macdLine, signalLine, _] = ta.macd(close, macdFast, macdSlow, macdSignal)
+macdCrossUp = ta.crossover(macdLine, signalLine)
+macdCrossDown = ta.crossunder(macdLine, signalLine)
+
+// === ENTRY CONDITIONS ===
+longCondition = (rsi < rsiOversold) and macdCrossUp
+shortCondition = (rsi > rsiOverbought) and macdCrossDown
+
+// === STRATEGY ENTRIES ===
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+    strategy.exit("TP/SL Long", from_entry="Long", limit=close * (1 + takeProfitPerc), stop=close * (1 - stopLossPerc))
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+    strategy.exit("TP/SL Short", from_entry="Short", limit=close * (1 - takeProfitPerc), stop=close * (1 + stopLossPerc))
+
+// === PLOT INDICATORS FOR VISUAL FEEDBACK ===
+plot(rsi, title="RSI", color=color.orange)
+hline(rsiOverbought, "Overbought", color=color.red)
+hline(rsiOversold, "Oversold", color=color.green)
+hline(50, "Middle Line", color=color.gray)

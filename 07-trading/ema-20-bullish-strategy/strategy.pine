@@ -1,0 +1,52 @@
+/*backtest
+start: 2024-04-02 00:00:00
+end: 2025-04-01 00:00:00
+period: 1d
+basePeriod: 1d
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © SirTraderUSA
+
+//@version=6
+
+plot(close)//@version=5
+strategy("EMA 20 Bullish Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// Define 20-day EMA
+emaLength = 20
+ema20 = ta.ema(close, emaLength)
+
+// Entry Condition: Price crosses above EMA 20
+longCondition = ta.crossover(close, ema20)
+
+// Exit Condition: Price crosses below EMA 20
+exitCondition = ta.crossunder(close, ema20)
+
+// Execute Trades
+if longCondition
+    strategy.entry("Long", strategy.long)
+
+if exitCondition
+    strategy.close("Long")
+
+// Win/Loss Calculation
+var float wins = 0
+var float losses = 0
+var float totalTrades = 0
+
+if strategy.position_size == 0 and strategy.opentrades > totalTrades
+    totalTrades := strategy.opentrades
+    if strategy.netprofit > 0
+        wins := wins + 1
+    else
+        losses := losses + 1
+
+// Winning Percentage
+winRate = totalTrades > 0 ? (wins / totalTrades) * 100 : na
+
+// Display Win Rate on Chart
+label = "Win Rate: " + str.tostring(winRate, "#.##") + "%"
+labelText = label + "\nTotal Trades: " + str.tostring(totalTrades, "#")
+label_pos = close * 1.02

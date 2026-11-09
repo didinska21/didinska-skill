@@ -1,0 +1,45 @@
+/*backtest
+start: 2024-06-30 00:00:00
+end: 2024-07-30 00:00:00
+period: 1h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("Supertrend Strategy", overlay=true)
+
+// Supertrend function
+supertrend(length, factor) =>
+    [superTrend, direction] = ta.supertrend(factor, length)
+    superTrend
+
+// Supertrend parameters
+length1 = 7
+factor1 = 3
+length2 = 14
+factor2 = 2
+length3 = 21
+factor3 = 1
+
+// Supertrend calculations
+superTrend1 = supertrend(length1, factor1)
+superTrend2 = supertrend(length2, factor2)
+superTrend3 = supertrend(length3, factor3)
+
+// Plot Supertrend lines
+plot(superTrend1, color=color.red, title="Supertrend 1")
+plot(superTrend2, color=color.green, title="Supertrend 2")
+plot(superTrend3, color=color.blue, title="Supertrend 3")
+
+// Buy and sell signals
+buySignal = ta.crossover(close, superTrend1) or ta.crossover(close, superTrend2) or ta.crossover(close, superTrend3)
+sellSignal = ta.crossunder(close, superTrend1) or ta.crossunder(close, superTrend2) or ta.crossunder(close, superTrend3)
+
+// Strategy entry and exit
+strategy.entry("Buy", strategy.long, when=buySignal)
+strategy.close("Buy", when=sellSignal)
+
+// Plot buy and sell signals on chart
+plotshape(series=buySignal, location=location.belowbar, color=color.green, style=shape.labelup, text="BUY")
+plotshape(series=sellSignal, location=location.abovebar, color=color.red, style=shape.labeldown, text="SELL")

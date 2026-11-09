@@ -1,0 +1,35 @@
+/*backtest
+start: 2023-08-18 00:00:00
+end: 2023-09-17 00:00:00
+period: 1h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//Created by Syam Mohan @ T7 Wealth Creators Pvt Ltd - Makes Life Easier, on request from @stocksonfire. 
+//This is a trend following daily bar trading system for NIFTY. Original idea belongs to ILLANGO @ http://tradeinniftyonly.blogspot.in
+//Use it at your own risk after validation at your end. Neither me or my company is responsible for any lossses you may incur using this system. 
+
+//@version=2
+strategy("T7 JNSAR", overlay=true)
+
+backtest = input(title="Enable Backtest", type=bool, defval=1)
+
+sum = ema(high, 5) + ema(low, 5) + ema(close, 5) 
+sum := sum + ema(high[1], 5) + ema(low[1], 5) + ema(close[1], 5) 
+sum := sum + ema(high[2], 5) + ema(low[2], 5) + ema(close[2], 5)
+sum := sum + ema(high[3], 5) + ema(low[3], 5) + ema(close[3], 5) 
+sum := sum + ema(high[4], 5) + ema(low[4], 5) + ema(close[4], 5)
+
+jnsar = round(sum/15)
+
+buy = close > jnsar
+short = close < jnsar
+
+plot(jnsar,color=green,linewidth=4)
+
+if backtest!=0
+    strategy.entry("JNSARLong", strategy.long,comment="JNSARLong",when=buy!=0)
+    strategy.entry("JNSARShort", strategy.short,comment="JNSARShort",when=short!=0)
+    
+  

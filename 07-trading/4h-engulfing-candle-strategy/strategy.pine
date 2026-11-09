@@ -1,0 +1,50 @@
+/*backtest
+start: 2023-07-20 00:00:00
+end: 2024-07-25 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("4H Engulfing Candle Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// Input variables
+tpMultiplier = input.float(1.0, "Take Profit Multiplier", step=0.1)
+slTicks = input.int(100, "Stop Loss Ticks")  // Number of ticks for SL
+
+// Calculate body size for bullish and bearish engulfing candles on 4H timeframe
+bullishBodySize = close - open
+bearishBodySize = open - close
+
+// Determine engulfing conditions on 4H timeframe
+bullishEngulfing = close > open[1] and open < close[1] and open <= open[1] and close >= close[1]
+bearishEngulfing = close < open[1] and open > close[1] and open >= open[1] and close <= close[1]
+
+// Entry and exit levels
+var float entryPrice = na
+var float tpPrice = na
+var float slPrice = na
+
+if bullishEngulfing
+    entryPrice := close
+    tpPrice := close + bullishBodySize * tpMultiplier
+    slPrice := entryPrice - slTicks * syminfo.mintick  // Calculate SL price based on ticks and tick size
+
+    // Execute strategy orders for bullish engulfing
+    strategy.entry("Buy", strategy.long)
+    strategy.exit("TP/SL", "Buy", limit=tpPrice, stop=slPrice)
+
+if bearishEngulfing
+    entryPrice := close
+    tpPrice := close - bearishBodySize * tpMultiplier
+    slPrice := entryPrice + slTicks * syminfo.mintick  // Calculate SL price based on ticks and tick size
+
+    // Execute strategy orders for bearish engulfing
+    strategy.entry("Sell", strategy.short)
+    strategy.exit("TP/SL", "Sell", limit=tpPrice, stop=slPrice)
+
+// Plot entry, take profit and stop loss levels
+plot(entryPrice, color=color.new(color.green, 0), style=plot.style_stepline, title="Entry Price")
+plot(tpPrice, color=color.new(color.green, 0), style=plot.style_stepline, title="Take Profit")
+plot(slPrice, color=color.new(color.red, 0), style=plot.style_stepline, title="Stop Loss")

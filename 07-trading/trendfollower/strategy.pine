@@ -1,0 +1,40 @@
+/*backtest
+start: 2023-07-24 00:00:00
+end: 2024-07-29 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("TrendFollower", overlay=true)
+
+input_ma_period = input.int(50, title="MA Period")
+input_rsi_period = input.int(14, title="RSI Period")
+input_lot_size = input.float(1, title="Lot Size")
+input_stop_loss_pips = input.float(300, title="Stop Loss (Pips)")
+input_take_profit_pips = input.float(600, title="Take Profit (Pips)")
+input_adx_period = input.int(14, title="ADX Period")
+input_adx_threshold = input.float(25.0, title="ADX Threshold")
+
+// Calculate Indicators
+ma = ta.sma(close, input_ma_period)
+rsi = ta.rsi(close, input_rsi_period)
+
+// Calculate ADX manually
+adx_smoothing = input.int(14, title="ADX Smoothing")
+[plus_di, minus_di, adx_line] = ta.dmi(input_adx_period, adx_smoothing)
+
+// Calculate Stop Loss and Take Profit in terms of price
+stop_loss = input_stop_loss_pips * syminfo.pointvalue
+take_profit = input_take_profit_pips * syminfo.pointvalue
+
+// Define trade logic
+long_condition = close > ma and adx_line > input_adx_threshold
+short_condition = close < ma and adx_line > input_adx_threshold
+
+// Execute trades
+if (long_condition)
+    strategy.entry("Buy", strategy.long, qty=input_lot_size, stop=close - stop_loss, limit=close + take_profit)
+if (short_condition)
+    strategy.entry("Sell", strategy.short, qty=input_lot_size, stop=close + stop_loss, limit=close - take_profit)

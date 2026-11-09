@@ -1,0 +1,45 @@
+/*backtest
+start: 2023-12-01 00:00:00
+end: 2023-12-31 23:59:59
+period: 1h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//╭╮╱╱╭╮╭╮╱╱╭╮
+//┃╰╮╭╯┃┃┃╱╱┃┃
+//╰╮┃┃╭┻╯┣╮╭┫╰━┳╮╭┳━━╮
+//╱┃╰╯┃╭╮┃┃┃┃╭╮┃┃┃┃━━┫
+//╱╰╮╭┫╰╯┃╰╯┃╰╯┃╰╯┣━━┃
+//╱╱╰╯╰━━┻━━┻━━┻━━┻━━╯
+//╭━━━┳╮╱╱╱╱╱╱╱╭╮
+//┃╭━╮┃┃╱╱╱╱╱╱╱┃┃
+//┃┃╱╰┫╰━┳━━┳━╮╭━╮╭━━┫┃
+//┃┃╱╭┫╭╮┃╭╮┃╭╮┫╭╮┫┃━┫┃
+//┃╰━╯┃┃┃┃╭╮┃┃┃┃┃┃┃┃━┫╰╮
+//╰━━━┻╯╰┻╯╰┻╯╰┻╯╰┻━━┻━╯
+//━╯
+//Vdub Renko SniperVX1 v1 // ATR Setting = 1
+//  ©Vdubus http://www.vdubus.co.uk/
+// study("Vdub Renko SniperVX1 v1", overlay=true, shorttitle="Vdub_Renko_SniperVX1_v1")
+//@version=4
+strategy(title = "Stripped Down Vdub Renko Sniper Strategy", shorttitle = "Vdub Renko Strat", overlay = true )
+
+//Modified - Rajandran R Supertrend-----------------------------------------------------
+Factor=input(1, minval=1,maxval = 1000, title="Trend Transition Signal")
+Pd=input(1, minval=1,maxval = 1000, title="Period")
+Up=hl2-(Factor*atr(Pd))
+Dn=hl2+(Factor*atr(Pd))
+TrendUp=close[1]>TrendUp[1]? max(Up,TrendUp[1]) : Up
+TrendDown=close[1]<TrendDown[1]? min(Dn,TrendDown[1]) : Dn
+Trend = close > TrendDown[1] ? 1: close< TrendUp[1]? -1: nz(Trend[1],0)
+plotarrow(Trend == 1 and Trend[1] == -1 ? Trend : na, title="Up Entry Arrow", colorup=lime, maxheight=1000, minheight=50)
+plotarrow(Trend == -1 and Trend[1] == 1 ? Trend : na, title="Down Entry Arrow", colordown=red, maxheight=1000, minheight=50)
+
+goLong = Trend == 1 and Trend[1] == -1
+goShort = Trend == -1 and Trend[1] == 1
+
+strategy.entry("longgg", strategy.long, when=goLong)
+strategy.entry("shortttt", strategy.short, when=goShort)
+strategy.exit("XL", from_entry = "long", profit = na, loss = na)
+strategy.exit("XS", from_entry = "short", profit = na, loss = na)

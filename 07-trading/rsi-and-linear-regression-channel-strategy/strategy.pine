@@ -1,0 +1,47 @@
+/*backtest
+start: 2024-05-01 00:00:00
+end: 2024-05-31 23:59:59
+period: 1h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("RSI and Linear Regression Channel Strategy", overlay=true)
+
+// Define input parameters
+rsiLength = input(14, title="RSI Length")
+channelLength = input(100, title="Linear Regression Channel Length")
+rsiBuyThreshold = 30
+rsiSellThreshold = 70
+
+// Calculate RSI
+rsi = ta.rsi(close, rsiLength)
+
+// Calculate Linear Regression Channel
+basis = ta.linreg(close, channelLength, 0)
+dev = ta.stdev(close, channelLength)
+upperChannel = basis + dev
+lowerChannel = basis - dev
+
+// Plot Linear Regression Channel
+plot(basis, color=color.blue, title="Basis")
+plot(upperChannel, color=color.red, title="Upper Channel")
+plot(lowerChannel, color=color.green, title="Lower Channel")
+
+// Entry condition: Price touches lower channel and RSI crosses below buy threshold
+longCondition = (close <= lowerChannel) and (rsi < rsiBuyThreshold)
+
+// Exit condition: Price touches upper channel and RSI crosses above sell threshold
+shortCondition = (close >= upperChannel) and (rsi > rsiSellThreshold)
+
+// Strategy execution
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+
+if (shortCondition)
+    strategy.close("Long")
+
+// Plot buy/sell signals on the chart
+plotshape(series=longCondition, location=location.belowbar, color=color.green, style=shape.labelup, text="BUY")
+plotshape(series=shortCondition, location=location.abovebar, color=color.red, style=shape.labeldown, text="SELL")

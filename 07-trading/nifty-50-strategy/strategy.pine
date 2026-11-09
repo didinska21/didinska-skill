@@ -1,0 +1,43 @@
+/*backtest
+start: 2023-05-11 00:00:00
+end: 2024-05-16 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("Nifty 50 Strategy", overlay=true)
+
+// Define 3-minute timeframe
+timeframe = "3"
+
+// Track if the current bar is the first bar of the session
+isNewSession = ta.change(hour(time, "D")) != 0
+
+// Track the open of the first candle of the session
+firstCandleOpen = isNewSession ? open : na
+
+// Track the high and low of the first candle
+var float firstCandleHigh = na
+var float firstCandleLow = na
+
+if isNewSession
+    firstCandleHigh := high
+    firstCandleLow := low
+
+// Alert when the first candle is completed
+if ta.barssince(isNewSession) == 3
+    alert("First Candle Completed - High: " + str.tostring(firstCandleHigh) + ", Low: " + str.tostring(firstCandleLow))
+
+// Track if the high or low of the first candle is broken
+highBroken = high > firstCandleHigh
+lowBroken = low < firstCandleLow
+
+// Alert when the high or low of the first candle is broken
+if highBroken
+    alert("High of First Candle Broken - High: " + str.tostring(high))
+    strategy.entry("Enter Long", strategy.long)
+if lowBroken
+    alert("Low of First Candle Broken - Low: " + str.tostring(low))
+    strategy.entry("Enter Short", strategy.short)

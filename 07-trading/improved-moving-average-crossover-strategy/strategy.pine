@@ -1,0 +1,45 @@
+/*backtest
+start: 2023-11-28 00:00:00
+end: 2023-12-01 00:00:00
+period: 1m
+basePeriod: 1m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("Improved Moving Average Crossover Strategy", overlay=true)
+
+// Define input variables
+fast_length = input(9, title="Fast MA Length")
+slow_length = input(21, title="Slow MA Length")
+trend_length = input(50, title="Trend MA Length")
+src = close
+
+// Calculate moving averages
+fast_ma = ta.sma(src, fast_length)
+slow_ma = ta.sma(src, slow_length)
+trend_ma = ta.sma(src, trend_length)
+
+// Plot moving averages on the chart
+plot(fast_ma, color=color.blue, title="Fast MA")
+plot(slow_ma, color=color.red, title="Slow MA")
+plot(trend_ma, color=color.green, title="Trend MA")
+
+// Define trend direction
+is_uptrend = ta.crossover(slow_ma, trend_ma)
+is_downtrend = ta.crossunder(slow_ma, trend_ma)
+
+// Define buy and sell conditions
+buy_condition = ta.crossover(fast_ma, slow_ma) and is_uptrend
+sell_condition = ta.crossunder(fast_ma, slow_ma) and is_downtrend
+
+// Execute trades based on conditions
+if (buy_condition)
+    strategy.entry("Buy", strategy.long)
+if (sell_condition)
+    strategy.close("Buy")
+
+if (sell_condition)
+    strategy.entry("Sell", strategy.short)
+if (buy_condition)
+    strategy.close("Sell")

@@ -1,0 +1,45 @@
+/*backtest
+start: 2024-03-23 00:00:00
+end: 2024-06-06 00:00:00
+period: 1h
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BNB_USDT"}]
+*/
+
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © nadeemred19
+
+//@version=6
+strategy("EMA Crossover with Tiny Triangle Signal & Dynamic Quantity", overlay=true)
+
+// EMA Indicators
+ema10 = ta.ema(close, 10)
+ema20 = ta.ema(close, 20)
+
+// Plot EMAs
+plot(ema10, title="10 EMA", color=color.green, linewidth=2)
+plot(ema20, title="20 EMA", color=color.blue, linewidth=2)
+
+// Bullish candle condition
+bullishCandle = close > open
+
+// Variables to store entry candle low
+var float entryCandleLow = na
+
+// Entry Signal: 10 EMA crosses over 20 EMA AND candle is bullish
+longCondition = ta.crossover(ema10, ema20) and bullishCandle
+
+// Calculate dynamic stock quantity: 1000 / (close - low)
+var float buyQty = na
+if (longCondition)
+    entryCandleLow := low
+    buyQty := 1000 / (close - low)
+
+// Plot Tiny Triangle Entry Signal
+if (longCondition)
+    label.new(bar_index, low, "▲", color=color.green, textcolor=color.green, size=size.tiny, style=label.style_label_down, yloc=yloc.belowbar)
+
+// Entry and stop-loss
+if (longCondition)
+    strategy.entry("Buy", strategy.long, qty=buyQty)
+    strategy.exit("Stop-Loss", from_entry="Buy", stop=entryCandleLow)

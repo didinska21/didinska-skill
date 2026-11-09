@@ -1,0 +1,64 @@
+/*backtest
+start: 2024-03-02 00:00:00
+end: 2024-04-02 19:00:00
+period: 2h
+basePeriod: 2h
+exchanges: [{"eid":"Futures_Binance","currency":"ETH_USDT"}]
+*/
+
+//@version=5
+// Pullback Strategy
+strategy("Pullback Strategy", overlay=true, initial_capital=100000, default_qty_type=strategy.percent_of_equity, default_qty_value=100, commission_type=strategy.commission.percent, commission_value=0.01)
+
+// Inputs
+i_fast_ma_length = input.int(10, "Fast MA Length", minval=1)
+i_slow_ma_length = input.int(50, "Slow MA Length", minval=1)
+i_atr_period = input.int(14, "ATR Period", minval=1)
+i_sl_multiplier = input.float(2.0, "Stop Loss Multiplier", minval=0.1, step=0.1)
+
+// Moving Averages
+fast_ma = ta.ema(close, i_fast_ma_length)
+slow_ma = ta.ema(close, i_slow_ma_length)
+
+// Trend Determination
+trend_up = fast_ma > slow_ma
+trend_down = fast_ma < slow_ma
+
+// ATR Calculation
+atr = ta.atr(i_atr_period)
+
+// Pullback in Progress for Long
+pullback_in_progress = trend_up and close < fast_ma and low > slow_ma
+
+// Long Entry Condition
+long_entry = trend_up and pullback_in_progress[1] and open < fast_ma and close > fast_ma
+
+// Rally in Progress for Short
+rally_in_progress = trend_down and close > fast_ma and high < slow_ma
+
+// Short Entry Condition
+short_entry = trend_down and rally_in_progress[1] and open > fast_ma and close < fast_ma
+
+// Long Entry and Exit
+if long_entry
+    entry_price = close
+    stop_loss_price = entry_price - (atr * i_sl_multiplier)
+    take_profit_price = entry_price + (2 * (entry_price - stop_loss_price))
+    strategy.entry("Long", strategy.long)
+    strategy.exit("Long Exit", "Long", stop=stop_loss_price, limit=take_profit_price)
+
+// Short Entry and Exit
+if short_entry
+    entry_price = close
+    stop_loss_price = entry_price + (atr * i_sl_multiplier)
+    take_profit_price = entry_price - (2 * (stop_loss_price - entry_price))
+    strategy.entry("Short", strategy.short)
+    strategy.exit("Short Exit", "Short", stop=stop_loss_price, limit=take_profit_price)
+
+// Plotting MAs
+plot(fast_ma, color=color.orange, linewidth=2, title="Fast MA")
+plot(slow_ma, color=color.red, linewidth=2, title="Slow MA")
+
+// Plotting Entry Points
+plotshape(long_entry, title="Long Entry", style=shape.triangleup, color=color.green, location=location.belowbar)
+plotshape(short_entry, title="Short Entry", style=shape.triangledown, color=color.red, location=location.abovebar)

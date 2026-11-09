@@ -1,0 +1,41 @@
+/*backtest
+start: 2023-09-12 00:00:00
+end: 2023-10-12 00:00:00
+period: 3h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=4
+strategy("4H CCI Strategy", overlay=true)
+length = input( 11 )
+overSold = input( -150 )
+overBought = input( +150 )
+price1 = high
+price2 = low
+ucci = cci(price1, length)
+dcci = cci(price2, length)
+vcci = cci(ohlc4, 11)
+
+resCustom = input(title="Timeframe", defval="15")
+Length = input(16, minval=1)
+xPrice = request.security(syminfo.tickerid, resCustom, hlc3)
+xvnoise = abs(xPrice - xPrice[1])
+nfastend = 0.666
+nslowend = 0.0645
+nsignal = abs(xPrice - xPrice[Length])
+nnoise = sum(xvnoise, Length)
+nefratio = iff(nnoise != 0, nsignal / nnoise, 0)
+nsmooth = pow(nefratio * (nfastend - nslowend) + nslowend, 2) 
+nAMA = nz(nAMA[1]) + nsmooth * (xPrice - nz(nAMA[1]))
+basis1 = nAMA
+slope = change(basis1,1)
+
+if (not na(vcci))
+    if (crossover(dcci, overSold))
+        strategy.entry("CCILE", strategy.long, comment="CCILE")
+        strategy.exit("exit", "CCILE", profit = 0.01, loss = 0.005)
+    if (crossunder(ucci, overBought))
+        strategy.entry("CCISE", strategy.short, comment="CCISE")
+        strategy.exit("exit", "CCISE", profit = 0.01, loss = 0.005)
+//plot(strategy.equity, title="equity", color=red, linewidth=2, style=areabr)

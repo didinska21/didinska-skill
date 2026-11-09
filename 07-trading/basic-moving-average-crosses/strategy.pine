@@ -1,0 +1,67 @@
+/*backtest
+start: 2023-05-11 00:00:00
+end: 2024-05-16 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+//==============================================================================
+// A baseline strategy with a well known concept, golden cross & death cross.
+// Support for both Simple & Exponential moving averages.
+// Support for long & short stop losses as a percentage.:well
+//==============================================================================
+strategy("Basic Moving Average Crosses", overlay=true)
+
+//------------------------------------------------------------------------------
+// configuration
+//------------------------------------------------------------------------------
+maQuickLength = input(50, title="Quick MA Length") 
+maSlowLength  = input(200, title="Quick MA Length") 
+useSma        = input(true, title="Use SMA? If false, EMA is used.")
+
+maQuick = useSma ? ta.sma(close, maQuickLength) : ta.ema(close, maQuickLength)
+maSlow  = useSma ? ta.sma(close, maSlowLength) : ta.ema(close, maSlowLength)
+
+stop_loss_percentage = input(2.0, title="Stop Loss (%)")
+
+var float longStopLevel = na
+var float shortStopLevel = na
+
+bool isGoldenCross = ta.crossover(maQuick, maSlow)
+bool isDeathCross  = ta.crossunder(maQuick, maSlow)
+
+//------------------------------------------------------------------------------
+// position opening logic
+//------------------------------------------------------------------------------
+
+if(strategy.position_size == 0)
+    // Golden cross, enter a long position
+    if(isGoldenCross)
+        strategy.entry("Buy", strategy.long)
+        longStopLevel := close - close * stop_loss_percentage/100.0
+        strategy.exit("StopLossLong", "Buy", stop=longStopLevel)
+    // Death cross, enter short position
+    else if(isDeathCross)
+        strategy.entry("Sell", strategy.short)
+        shortStopLevel := close + close * stop_loss_percentage/100.0
+        strategy.exit("StopLossShort", "Sell", stop=shortStopLevel)
+
+//------------------------------------------------------------------------------
+// position closing logic
+//------------------------------------------------------------------------------
+else
+    // Close long position on death cross
+    if(strategy.position_size > 0 and isDeathCross)
+        strategy.close("Buy")
+    
+    // Close short position on golden cross
+    else if(strategy.position_size < 0 and isGoldenCross)
+        strategy.close("Sell")
+
+//------------------------------------------------------------------------------
+// ploting
+//------------------------------------------------------------------------------
+plot(maQuick, color=color.yellow)
+plot(maSlow, color=color.blue)

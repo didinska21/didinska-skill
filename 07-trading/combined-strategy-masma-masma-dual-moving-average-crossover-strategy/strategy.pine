@@ -1,0 +1,40 @@
+/*backtest
+start: 2023-05-22 00:00:00
+end: 2024-05-27 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("Combined Strategy", overlay=true)
+
+// Moving Averages Length Inputs
+short_length = input.int(20, "Short MA Length")
+long_length = input.int(50, "Long MA Length")
+
+// Moving Averages
+ma_short = ta.sma(close, short_length)
+ma_long = ta.sma(close, long_length)
+
+// Buy Condition (Moving Average Crossover)
+buy_condition = ta.crossover(ma_short, ma_long)
+plotshape(series=buy_condition, style=shape.triangleup, location=location.belowbar, color=color.green, size=size.small)
+
+// Sell Condition (Moving Average Crossover)
+sell_condition = ta.crossunder(ma_short, ma_long)
+plotshape(series=sell_condition, style=shape.triangledown, location=location.abovebar, color=color.red, size=size.small)
+
+// Strategy Entry and Exit
+if (buy_condition)
+    strategy.entry("Buy", strategy.long)
+
+if (sell_condition)
+    strategy.entry("Sell", strategy.short)
+
+// Debug statements
+if (buy_condition)
+    label.new(x=bar_index, y=low, text="Buy Signal", color=color.green, style=label.style_label_up)
+
+if (sell_condition)
+    label.new(x=bar_index, y=high, text="Sell Signal", color=color.red, style=label.style_label_down)

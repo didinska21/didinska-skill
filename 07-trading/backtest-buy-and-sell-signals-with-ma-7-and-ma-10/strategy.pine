@@ -1,0 +1,37 @@
+/*backtest
+start: 2025-01-18 19:45:00
+end: 2025-03-12 08:00:00
+period: 1h
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"TRUMP_USDT"}]
+*/
+
+//@version=5
+strategy("Backtest Buy and Sell Signals with MA 7 and MA 10", overlay=true)
+
+// Calculate Moving Averages
+ma7 = ta.sma(close, 7)
+ma10 = ta.sma(close, 10)
+ma100 = ta.sma(close, 100)
+ma200 = ta.sma(close, 200)
+
+// Plot MAs
+plot(ma7, color=color.blue, title="MA 7")
+plot(ma10, color=color.red, title="MA 10")
+plot(ma100, color=#512ca8, title="MA 100")
+plot(ma200, color=color.rgb(152, 139, 20), title="MA 200")
+
+// Buy and Sell Signals
+buySignal = ta.crossover(ma7, ma10)
+sellSignal = ta.crossunder(ma7, ma10)
+
+// Display signals on the chart
+plotshape(buySignal, style=shape.labelup, location=location.belowbar, color=color.rgb(231, 241, 232), size=size.small, title="Buy Signal", text="buy")
+plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, color=color.rgb(237, 221, 221), size=size.small, title="Sell Signal", text="sell")
+
+// Entry and Exit Logic
+if (buySignal)
+    strategy.entry("Buy", strategy.long)
+
+if (sellSignal)
+    strategy.close("Buy")

@@ -1,0 +1,43 @@
+/*backtest
+start: 2022-12-20 00:00:00
+end: 2023-08-10 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=4
+strategy("Mean Reversion with Risk Management", overlay=true)
+
+// Inputs for Bollinger Bands and Risk Management
+length = input(20, minval=1, title="Bollinger Bands Length")
+mult = input(2.0, title="Bollinger Bands Multiplier")
+stopLossATRMult = input(2.0, title="Stop Loss ATR Multiplier")
+takeProfitATRMult = input(3.0, title="Take Profit ATR Multiplier")
+
+// Bollinger Bands Calculation
+src = close
+basis = sma(src, length)
+dev = mult * stdev(src, length)
+upper = basis + dev
+lower = basis - dev
+plot(upper, "Upper Band", color=color.red)
+plot(lower, "Lower Band", color=color.green)
+
+// ATR for Stop Loss and Take Profit
+atr = atr(14)
+
+// Trading Conditions
+longCondition = crossover(src, lower)
+shortCondition = crossunder(src, upper)
+
+// Order Execution with Stop Loss and Take Profit
+if (longCondition)
+    sl = src - stopLossATRMult * atr
+    tp = src + takeProfitATRMult * atr
+    strategy.entry("Long", strategy.long, stop=sl, limit=tp)
+
+if (shortCondition)
+    sl = src + stopLossATRMult * atr
+    tp = src - takeProfitATRMult * atr
+    strategy.entry("Short", strategy.short, stop=sl, limit=tp)

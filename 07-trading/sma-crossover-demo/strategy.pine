@@ -1,0 +1,23 @@
+/*backtest
+start: 2023-08-11 00:00:00
+end: 2023-09-10 00:00:00
+period: 10m
+basePeriod: 1m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=3
+strategy("SMA Crossover demo", overlay=true)
+
+shortCondition = crossover(sma(close, 34), sma(close, 4))
+if (shortCondition)
+    strategy.entry("Sell/Short", strategy.short)
+
+longCondition = crossunder(sma(close, 34), sma(close, 4))
+if (longCondition)
+    strategy.entry("Buy/Long", strategy.long)
+    
+
+
+
+    

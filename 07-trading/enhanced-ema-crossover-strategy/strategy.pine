@@ -1,0 +1,44 @@
+/*backtest
+start: 2024-03-01 00:00:00
+end: 2024-03-31 23:59:59
+period: 1h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=4
+strategy("Enhanced EMA Crossover Strategy", overlay=true)
+
+// Indicators
+ema_fast = ema(close, 8)
+ema_slow = ema(close, 14)
+rsi = rsi(close, 14)
+
+// Correcting the MACD variable definitions
+[macd_line, signal_line, _] = macd(close, 12, 26, 9)
+atr_value = atr(14)
+
+// Entry conditions with additional filters
+long_condition = crossover(ema_fast, ema_slow) and rsi < 70 and (macd_line > signal_line) and atr_value > atr_value[1] * 1.1
+short_condition = crossunder(ema_fast, ema_slow) and rsi > 30 and (macd_line < signal_line) and atr_value > atr_value[1] * 1.1
+
+// Adding debug information
+plotshape(series=long_condition, color=color.green, location=location.belowbar, style=shape.xcross, title="Long Signal")
+plotshape(series=short_condition, color=color.red, location=location.abovebar, style=shape.xcross, title="Short Signal")
+
+// Risk management based on a fixed number of points
+stop_loss_points = 100
+take_profit_points = 200
+
+// Order execution
+if (long_condition)
+    strategy.entry("Long", strategy.long, comment="Long Entry")
+    strategy.exit("Exit Long", "Long", stop=close - stop_loss_points, limit=close + take_profit_points)
+
+if (short_condition)
+    strategy.entry("Short", strategy.short, comment="Short Entry")
+    strategy.exit("Exit Short", "Short", stop=close + stop_loss_points, limit=close - take_profit_points)
+
+// Plotting EMAs for reference
+plot(ema_fast, color=color.blue, title="Fast EMA")
+plot(ema_slow, color=color.orange, title="Slow EMA")

@@ -1,0 +1,57 @@
+/*backtest
+start: 2023-05-05 00:00:00
+end: 2024-05-10 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("H1 Bias + M15 MSS + M5 FVG", overlay=true, initial_capital=1000, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// H1 Bias
+h1_bias = request.security(syminfo.tickerid, "60", close)
+h1_ma = ta.sma(h1_bias, 50)
+
+// M15 MSS
+[m15_macd_line, m15_macd_signal, _] = ta.macd(request.security(syminfo.tickerid, "15", close), 12, 26, 9)
+
+// M5 FVG Entry
+m5_volatility = ta.atr(14)
+
+// Entry conditions for long and short positions
+long_condition = m15_macd_line > m15_macd_signal and m5_volatility > 0.001
+short_condition = m15_macd_line < m15_macd_signal and m5_volatility > 0.001
+
+// Exit conditions
+exit_long_condition = m15_macd_line < m15_macd_signal
+exit_short_condition = m15_macd_line > m15_macd_signal
+
+// Strategy
+if (long_condition)
+    strategy.entry("Long", strategy.long)
+    
+if (short_condition)
+    strategy.entry("Short", strategy.short)
+
+if (exit_long_condition)
+    strategy.close("Long")
+    
+if (exit_short_condition)
+    strategy.close("Short")
+
+// Take-Profit and Stop-Loss settings considering leverage
+leverage = 10.0 // Leverage as a float
+tp_percentage = 15.0 // TP percentage without leverage as a float
+sl_percentage = 5.0 // SL percentage without leverage as a float
+
+tp_level = strategy.position_avg_price * (1.0 + (tp_percentage / 100.0 / leverage)) // TP considering leverage as a float
+sl_level = strategy.position_avg_price * (1.0 - (sl_percentage / 100.0 / leverage)) // SL considering leverage as a float
+
+strategy.exit("TP/SL", "Long", limit=tp_level, stop=sl_level)
+strategy.exit("TP/SL", "Short", limit=tp_level, stop=sl_level)
+
+// Plotting
+plot(h1_ma, color=color.blue, linewidth=2)
+plotshape(long_condition, style=shape.triangleup, location=location.belowbar, color=color.green, size=size.small)
+plotshape(short_condition, style=shape.triangledown, location=location.abovebar, color=color.red, size=size.small)

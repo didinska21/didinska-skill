@@ -1,0 +1,50 @@
+/*backtest
+start: 2019-12-23 08:00:00
+end: 2024-12-11 08:00:00
+period: 1d
+basePeriod: 1d
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("Supertrend with Volume Strategy", overlay=true)
+
+// Input parameters for Supertrend
+atrLength = input(10, title="ATR Length")
+multiplier = input(3.0, title="Multiplier")
+
+// Calculate Supertrend
+[supertrend, direction] = ta.supertrend(multiplier, atrLength)
+
+// Plot Supertrend
+plot(supertrend, color=direction == 1 ? color.green : color.red, title="Supertrend")
+
+// Volume condition
+volumeThreshold = input(1.5, title="Volume Threshold (x Average)")
+avgVolume = ta.sma(volume, 20) // 20-period average volume
+highVolume = volume > (avgVolume * volumeThreshold)
+
+// Define entry conditions
+longCondition = ta.crossover(close, supertrend) and highVolume
+shortCondition = ta.crossunder(close, supertrend) and highVolume
+
+// Execute trades
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+
+// Optional: Add stop loss and take profit
+stopLoss = input(1.5, title="Stop Loss (in ATRs)")
+takeProfit = input(3.0, title="Take Profit (in ATRs)")
+
+if (longCondition)
+    strategy.exit("Take Profit/Stop Loss", from_entry="Long", 
+                  limit=close + (takeProfit * ta.atr(atrLength)), 
+                  stop=close - (stopLoss * ta.atr(atrLength)))
+
+if (shortCondition)
+    strategy.exit("Take Profit/Stop Loss", from_entry="Short", 
+                  limit=close - (takeProfit * ta.atr(atrLength)), 
+                  stop=close + (stopLoss * ta.atr(atrLength)))

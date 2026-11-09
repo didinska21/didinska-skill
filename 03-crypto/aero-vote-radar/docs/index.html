@@ -1,0 +1,1213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aero Vote Radar — where your sAERO earns the most on Aero</title>
+<meta name="description" content="Enter how much sAERO you hold and see what every Aero pool on 7 networks pays you per day, after your own stake dilutes it. Your 47 h timer per network, rescanned every hour. Free, read-only.">
+<link rel="canonical" href="https://aero.deftools.xyz/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://aero.deftools.xyz/">
+<meta property="og:title" content="Aero Vote Radar — where your sAERO earns the most on Aero">
+<meta property="og:description" content="Enter how much sAERO you hold and see what every Aero pool on 7 networks pays you per day, after your own stake dilutes it. Your 47 h timer per network, rescanned every hour. Free, read-only.">
+<meta property="og:image" content="https://aero.deftools.xyz/card-v3.png">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"Aero Vote Radar","url":"https://aero.deftools.xyz/","applicationCategory":"FinanceApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Shows sAERO holders where to allocate on Aero across its seven networks: what every pool pays per day for the amount entered, after that stake dilutes it, with the 47 h timer per network. Rescanned hourly from Aero's contracts. Free, read-only.","sameAs":["https://github.com/araxis33/aero-vote-radar","https://www.npmjs.com/package/aero-vote-radar"],"isAccessibleForFree":true}
+</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Cpath fill='%230433ff' d='M29.5 62.6c1.4-5.5 11.8-11.2 16.7-13.8 14.7-7 30.5-11.3 46.3-14.7 3.6-.8 7.3-1.5 11-2.1 6.7-1.5 3.2-9.7-2.9-7.6-6.5 1.1-12.9 2.5-19.3 4-14.8 3.7-29.6 8.1-43.1 15.4-6.9 3.9-15.6 9.2-17.5 17.4 0 .4-.2.9-.1 1.4v1c0 .3 0 .7.1 1 3.6 15.9 45.5 20.9 59.6 22.3 6.6.8 13.3 1.1 19.9 1.5 2 .6 3.1-2 .8-2.3-1 0-2-.2-3.1-.3-17-1.6-34.2-4-50.4-9.8-3.8-1.3-7.5-2.9-10.9-5.1-2.2-1.4-4.4-2.9-5.9-5.1-.2-.3-.3-.6-.5-.9 0-.1 0-.3-.1-.4v-1.4z'/%3E%3Cpath fill='%23ff1100' d='M29.5 86.4c1.4-5.5 11.8-11.2 16.7-13.8 14.7-7 30.5-11.3 46.3-14.7 3.6-.8 7.3-1.5 11-2.1 6.7-1.5 3.2-9.7-2.9-7.6-6.5 1.1-12.9 2.5-19.3 4-14.8 3.7-29.6 8.1-43.1 15.4-6.9 3.9-15.6 9.2-17.5 17.4 0 .4-.2.9-.1 1.4v1c0 .3 0 .7.1 1 3.6 15.9 45.5 20.9 59.6 22.3 6.6.7 13.2 1.1 19.7 1.5.3 0 .6 0 .9 0 1.7 0 1.7-2.4 0-2.4-1 0-2-.2-3.1-.3-17-1.6-34.2-4-50.4-9.8-3.8-1.3-7.5-2.9-10.9-5.1-2.2-1.4-4.4-2.9-5.9-5.1-.2-.3-.3-.6-.5-.9 0-.1 0-.3-.1-.4v-1.4z'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #0a0c13;
+    --panel: #12161f;
+    --panel-2: #1a2029;
+    --line: #232b38;
+    --line-soft: #1c2330;
+    --text: #e8eef7;
+    --muted: #8a97ab;
+    --dim: #626e80;
+    --accent: #4d8dff;
+    --aero: #0433ff;
+    --aero-soft: #9cadff;
+    --good: #35d07f;
+    --warn: #ffb84d;
+    --bad: #ff6b6b;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1100px 520px at 12% -12%, rgba(4, 51, 255, 0.16), transparent 62%),
+      radial-gradient(760px 400px at 92% 0%, rgba(255, 17, 0, 0.06), transparent 58%),
+      var(--bg);
+    color: var(--text);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 30px 18px 72px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* header ---------------------------------------------------------------- */
+  header { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 8px; }
+  .logo { flex: 0 0 auto; width: 52px; height: 52px; filter: drop-shadow(0 3px 10px rgba(4, 51, 255, 0.45)); }
+  h1 { font-size: clamp(22px, 4.5vw, 29px); margin: 0 0 4px; letter-spacing: -0.025em; line-height: 1.15; }
+  .sub { color: var(--muted); margin: 0; max-width: 62ch; font-size: 15px; }
+  .meta { margin: 16px 0 26px; font-size: 13px; color: var(--dim); display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+  .meta strong { color: var(--text); font-weight: 600; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--good); display: inline-block; }
+  .dot.stale { background: var(--warn); }
+
+  h2 { font-size: 17px; margin: 36px 0 4px; letter-spacing: -0.01em; }
+  .h2note { color: var(--dim); font-size: 13px; margin: 0 0 12px; }
+  .rowhead { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+  /* panel ----------------------------------------------------------------- */
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: 14px; }
+  /* The one question a visitor can actually answer on arrival stands alone; the
+     four expert knobs fold away behind "Settings" with defaults that work. */
+  .controls-main { grid-template-columns: min(280px, 100%); }
+  details.advanced { margin-top: 14px; border-top: 0; padding-top: 0; }
+  details.advanced > summary { font-size: 13px; font-weight: 500; padding: 4px 0; }
+  details.advanced > summary:hover { color: var(--text); }
+  details.advanced[open] > summary { margin-bottom: 12px; }
+  .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .field label { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; }
+  input, select, button { font: inherit; }
+  input, select {
+    background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 8px;
+    padding: 10px 11px; font-size: 15px; width: 100%; min-width: 0;
+  }
+  input::placeholder { color: #5a6474; }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .addr-row { display: flex; gap: 8px; }
+  .addr-row input { flex: 1 1 auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13.5px; }
+  button {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 10px 14px; cursor: pointer; white-space: nowrap;
+  }
+  button:hover:not(:disabled) { border-color: var(--accent); color: #fff; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  button.primary { background: var(--aero); border-color: var(--aero); color: #fff; font-weight: 600; }
+  button.primary:hover:not(:disabled) { filter: brightness(1.15); }
+  .lookup-msg { font-size: 12.5px; margin-top: 7px; min-height: 17px; color: var(--dim); }
+  .lookup-msg.err { color: var(--bad); }
+  .lookup-msg.ok { color: var(--good); }
+  .hint { font-size: 12.5px; color: var(--dim); margin: 12px 0 0; }
+
+  /* stats ----------------------------------------------------------------- */
+  .totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 14px 0 6px; }
+  .stat { background: var(--panel); border: 1px solid var(--line-soft); border-radius: 10px; padding: 13px 15px; }
+  .stat .n { font-size: 23px; font-weight: 660; letter-spacing: -0.025em; }
+  .stat .l { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+  /* tables ---------------------------------------------------------------- */
+  .scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: right; padding: 10px 12px; white-space: nowrap; }
+  thead th { color: var(--dim); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--line); }
+  tbody td { border-bottom: 1px solid var(--line-soft); }
+  tbody tr:last-child td { border-bottom: none; }
+  th:first-child, td:first-child { text-align: left; }
+  #beforeAero th, #beforeAero td { text-align: left; }
+  #beforeAero td + td { white-space: normal; }
+  tbody tr:hover { background: rgba(77, 141, 255, 0.05); }
+  .num { font-variant-numeric: tabular-nums; }
+  .pct { font-weight: 680; color: var(--accent); font-size: 15px; }
+  .c-good { color: var(--good); } .c-warn { color: var(--warn); } .c-bad { color: var(--bad); }
+  .poolcell { display: flex; align-items: center; gap: 8px; }
+  /* No text-transform here on purpose: the lowercase letter in vAMM/sAMM is the
+     part that carries the meaning, and uppercasing it to VAMM/SAMM would print
+     a pool type Aerodrome doesn't actually use. */
+  .badge {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.04em; padding: 2px 6px;
+    border-radius: 5px; flex: 0 0 auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .badge.v { background: rgba(4, 51, 255, 0.2); color: var(--aero-soft); border: 1px solid rgba(4, 51, 255, 0.42); }
+  .badge.s { background: rgba(53, 208, 127, 0.14); color: var(--good); border: 1px solid rgba(53, 208, 127, 0.34); }
+  .badge.c { background: rgba(168, 128, 255, 0.16); color: #c3a6ff; border: 1px solid rgba(168, 128, 255, 0.38); }
+  .badge.m { background: rgba(255, 176, 32, 0.13); color: var(--warn); border: 1px solid rgba(255, 176, 32, 0.4); }
+  tr.migrating td { opacity: 0.62; }
+  .pname { overflow: hidden; text-overflow: ellipsis; }
+  .ext { color: var(--dim); font-size: 12px; }
+  .ext:hover { color: var(--accent); }
+
+  /* sparkline + momentum --------------------------------------------------- */
+  /* Sized in px rather than em: every sparkline must share one baseline width so
+     the column reads as a single chart, and bar height is meaningless unless the
+     plot box is identical row to row. */
+  td.ar-where { text-align: left; white-space: normal; color: var(--muted); font-size: 13px; min-width: 260px; }
+  td.ar-where b { color: var(--text); font-weight: 600; }
+  .ar-hero { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; margin: 10px 0 18px; padding: 20px 22px; border: 1px solid rgba(53, 208, 127, 0.45); background: rgba(53, 208, 127, 0.07); border-radius: var(--radius); }
+  .ar-hero-q { font-size: 15px; color: var(--muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .ar-hero-q input { width: 130px; font-size: 17px; font-weight: 650; }
+  .ar-hero-a { font-size: 22px; font-weight: 650; line-height: 1.35; }
+  .ar-hero-a b { color: var(--good); }
+  .ar-hero-pay { font-size: 30px; margin-top: 2px; }
+  .ar-hero-hot { font-size: 14px; font-weight: 500; color: var(--muted); margin-top: 4px; }
+  .ar-hero-pay small { font-size: 14px; color: var(--muted); font-weight: 500; }
+  .ar-hero a.primary { background: var(--aero); border: 1px solid var(--aero); color: #fff; font-weight: 600; border-radius: 8px; padding: 11px 18px; text-decoration: none; }
+  @media (max-width: 600px) { .ar-hero { padding: 16px; } .ar-hero-a { font-size: 19px; } .ar-hero-pay { font-size: 26px; } .ar-hero a.primary { align-self: stretch; text-align: center; } }
+  .ar-ap { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: center; justify-content: space-between; margin: 0 0 18px; }
+  .ar-ap-l { font-size: 12px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.06em; }
+  .ar-ap-n { font-size: 34px; font-weight: 700; line-height: 1.15; margin-top: 4px; }
+  .ar-ap-n small { font-size: 20px; color: var(--dim); font-weight: 600; }
+  .ar-ap-w { font-size: 12.5px; color: var(--dim); margin-top: 6px; }
+  .ar-bell { position: relative; }
+  .ar-bell-pop { position: absolute; right: 0; top: calc(100% + 8px); width: 330px; z-index: 5; padding: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); }
+  .ar-bell-pop label { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 10px; font-size: 14px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--text); cursor: pointer; }
+  .ar-bell-pop input[type=checkbox] { width: 18px; height: 18px; min-height: 0; padding: 0; margin: 2px 0 0; flex: none; accent-color: var(--aero); }
+  .ar-bell-pop .hint { margin: 0; }
+  @media (max-width: 600px) { .ar-ap-n { font-size: 28px; } .ar-bell, .ar-bell > button { width: 100%; } .ar-bell-pop { position: static; width: auto; margin-top: 10px; box-shadow: none; } }
+  .ar-record { margin: 0 0 18px; }
+  .ar-record h3 { font-size: 15px; margin: 0 0 8px; }
+  .ar-record td:nth-child(2), .ar-record th:nth-child(2) { text-align: left; }
+  .ar-record .hint { margin: 8px 0 0; }
+  .ar-answer { display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 16px; padding: 14px 16px; border: 1px solid rgba(53, 208, 127, 0.45); background: rgba(53, 208, 127, 0.07); border-radius: 10px; font-size: 15px; }
+  .ar-answer b { color: var(--good); }
+  .ar-answer a.primary { background: var(--aero); border: 1px solid var(--aero); color: #fff; font-weight: 600; border-radius: 8px; padding: 10px 14px; text-decoration: none; white-space: nowrap; }
+  .ar-moved { display: none; color: var(--dim); font-size: 12px; margin-top: 3px; }
+  /* On a phone the split is what matters; size and dollars earned give way to it. */
+  @media (max-width: 600px) {
+    #arTopWrap thead th:nth-child(2), #arTopWrap thead th:nth-child(3), #arTopWrap thead th:nth-child(6),
+    #arTopBody td:nth-child(2), #arTopBody td:nth-child(3), #arTopBody td:nth-child(6), #arTopBody .ar-chip { display: none; }
+    td.ar-where { min-width: 0; }
+    .ar-moved { display: block; }
+    #arTopBody .ar-new { display: table; margin: 4px 0 0; }
+  }
+  .ar-new { font-size: 11px; color: var(--warn); border: 1px solid rgba(255, 176, 32, 0.4); border-radius: 999px; padding: 1px 8px; margin-left: 6px; white-space: nowrap; }
+  .spark { display: block; width: 78px; height: 24px; }
+  .spark rect { fill: var(--aero-soft); }
+  /* The epoch still in progress: outline only, no fill. A dimmer solid bar would
+     still read as "this week collapsed" — an empty frame reads as "not counted yet". */
+  .spark rect.partial { fill: none; stroke: var(--dim); stroke-width: 1; stroke-dasharray: 2 2; }
+  .spark rect.zero { fill: var(--line); }
+  .mom { font-variant-numeric: tabular-nums; font-weight: 620; }
+  .mom .arrow { margin-right: 3px; }
+  .mom.flat { color: var(--muted); font-weight: 500; }
+  .mom.none { color: var(--dim); font-weight: 500; }
+
+  /* movers ----------------------------------------------------------------- */
+  .movers { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 680px) { .movers { grid-template-columns: 1fr; } }
+  .movers .panel { padding: 15px 17px; }
+  .movers h3 {
+    margin: 0 0 3px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.07em;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .movers h3.up { color: var(--good); }
+  .movers h3.down { color: var(--bad); }
+  .movers .h3note { color: var(--dim); font-size: 12px; margin: 0 0 11px; }
+  .mover {
+    display: grid; grid-template-columns: 1fr auto auto; align-items: center;
+    gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--line-soft);
+  }
+  .mover:last-child { border-bottom: none; }
+  .mover .name {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-size: 14px; min-width: 0;
+  }
+  .mover .avg { color: var(--dim); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .movers .empty { color: var(--dim); font-size: 13px; padding: 7px 0; }
+
+  .note {
+    border-left: 3px solid var(--warn); background: rgba(255, 184, 77, 0.07);
+    padding: 11px 13px; border-radius: 0 8px 8px 0; font-size: 13.5px; margin-top: 13px; color: #f0dcbb;
+  }
+  /* how much of this page to believe --------------------------------------- */
+  .trust { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 15px 17px; margin-top: 13px; }
+  .trust .when { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 10px; }
+  .kept { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+  .kept > div { border-left: 3px solid var(--line); padding-left: 11px; }
+  .kept .k { font-size: 21px; font-weight: 660; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .kept .k.good { color: var(--good); }
+  .kept .k.mid { color: var(--warn); }
+  .kept .k.bad { color: var(--bad); }
+  .kept .w { font-size: 12.5px; color: var(--dim); margin-top: 3px; }
+  .trust .basis { font-size: 12.5px; color: var(--dim); margin: 12px 0 0; max-width: 84ch; }
+  .stat .r { font-size: 12px; color: var(--dim); margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .calldata-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 11px 0 0; }
+  .calldata-row input { max-width: 240px; }
+  .hex {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; color: var(--muted); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin-top: 10px;
+    word-break: break-all; max-height: 154px; overflow-y: auto;
+  }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 12.5px; color: var(--dim); margin-top: 11px; }
+  .legend span b { color: var(--muted); font-weight: 600; }
+
+  details { margin-top: 30px; border-top: 1px solid var(--line); padding-top: 16px; }
+  summary { cursor: pointer; color: var(--muted); font-size: 14px; font-weight: 600; }
+  details p { font-size: 14px; color: var(--muted); max-width: 78ch; }
+  details strong { color: var(--text); }
+  footer { margin-top: 34px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--dim); font-size: 13px; }
+
+  /* mobile: turn each allocation row into a card ---------------------------- */
+  @media (max-width: 680px) {
+    .wrap { padding: 22px 14px 56px; }
+    .logo { width: 40px; height: 40px; }
+    .scroll.cards { overflow-x: visible; border: none; background: none; }
+    .scroll.cards table, .scroll.cards tbody, .scroll.cards tr, .scroll.cards td { display: block; width: 100%; }
+    .scroll.cards thead { display: none; }
+    .scroll.cards tr {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+      padding: 12px 14px; margin-bottom: 10px;
+    }
+    .scroll.cards td {
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      padding: 4px 0; border: none; text-align: right; white-space: normal;
+    }
+    .scroll.cards td::before {
+      content: attr(data-label); color: var(--dim); font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; text-align: left;
+    }
+    .scroll.cards td:first-child {
+      border-bottom: 1px solid var(--line-soft); padding-bottom: 9px; margin-bottom: 5px;
+    }
+    .scroll.cards td:first-child::before { content: none; }
+    #beforeAero .scroll.cards td { justify-content: flex-start; text-align: left; }
+    #arTable td:first-child { justify-content: flex-start; }
+  }
+  .you { background: linear-gradient(90deg, rgba(4, 51, 255, 0.18), rgba(4, 51, 255, 0.05)); border: 1px solid rgba(77, 141, 255, 0.45);
+    border-radius: var(--radius); padding: 14px 16px; margin: 0 0 14px; }
+  .you b { font-size: 19px; }
+  .you .sub { color: var(--muted); font-size: 14px; margin-top: 4px; max-width: none; }
+  .pill { font-size: 12px; padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
+  .pill.ok { color: var(--good); background: rgba(53, 208, 127, 0.1); }
+  .pill.wa { color: var(--warn); background: rgba(255, 184, 77, 0.1); }
+  .chains { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 4px; }
+  .chains span { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 7px 11px; font-size: 13.5px; }
+  /* Aero (sAERO) radar, the block at the top */
+  #aeroRadar h2:first-child { margin-top: 22px; }
+  .ar-controls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .ar-totals { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-top: 16px; }
+  .stat.hi { border-color: rgba(53, 208, 127, 0.45); }
+  .ar-callout { margin-top: 16px; padding: 12px 14px; border: 1px solid rgba(53, 208, 127, 0.4); background: rgba(53, 208, 127, 0.07); border-radius: 10px; font-size: 14px; }
+  .ar-mine { font-weight: 660; color: var(--good); }
+  #arBody .badge { margin-right: 8px; }
+  .ar-nets { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+  .ar-net { font-size: 13px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); cursor: pointer; }
+  .ar-net.on { background: var(--aero); border-color: var(--aero); color: #fff; }
+  .ar-chip { font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; margin-left: 6px; }
+  .ar-split { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
+  .ar-split a.primary { background: var(--aero); border: 1px solid var(--aero); color: #fff; font-weight: 600; border-radius: 8px; padding: 10px 14px; text-decoration: none; }
+  .ar-guide { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0 0 14px; counter-reset: step; }
+  .ar-guide > div { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 13px; color: var(--dim); }
+  .ar-guide > div::before { counter-increment: step; content: counter(step); display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 8px; border-radius: 50%; background: rgba(53, 208, 127, 0.15); color: var(--good); font-weight: 660; font-size: 12px; }
+  .ar-guide b { color: var(--text); }
+  @media (max-width: 640px) { .ar-guide { grid-template-columns: 1fr; } }
+  .ar-hold { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .ar-hold .n { font-size: 20px; font-weight: 660; }
+  .ar-bar { height: 8px; border-radius: 4px; background: var(--aero); }
+  .ar-old { margin-top: 40px; padding-top: 6px; border-top: 1px solid var(--line); }
+  @media (max-width: 600px) { .ar-controls { grid-template-columns: 1fr; } }
+  /* The radar is hidden until the scan loads; it fades in instead of popping into place. */
+  @media (prefers-reduced-motion: no-preference) {
+    #aeroRadar:not([hidden]) { animation: ar-in 0.3s ease-out; }
+  }
+  @keyframes ar-in { from { opacity: 0; transform: translateY(6px); } }
+</style>
+<link rel="stylesheet" href="wayfind.css">
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <svg class="logo" viewBox="0 0 128 128" aria-hidden="true">
+    <path fill="#0c0d1d" d="M29.5,54.6s0-.1,0-.1c1.4-5.5,11.8-11.2,16.7-13.8,14.7-7,30.5-11.3,46.3-14.7,3.6-.8,7.3-1.5,11-2.1,6.7-1.5,3.2-9.7-2.9-7.6-6.5,1.1-12.9,2.5-19.3,4-14.8,3.7-29.6,8.1-43.1,15.4-6.9,3.9-15.6,9.2-17.5,17.4,0,.4-.2.9-.1,1.4v1c0,.3,0,.7.1,1,3.6,15.9,45.5,20.9,59.6,22.3,6.6.8,13.3,1.1,19.9,1.5,2,.6,3.1-2,.8-2.3-1,0-2-.2-3.1-.3,0,0-.2,0-.2,0,0,0-.2,0-.2,0,0,0-.2,0-.3,0-17-1.6-34.2-4-50.4-9.8-3.8-1.3-7.5-2.9-10.9-5.1-2.2-1.4-4.4-2.9-5.9-5.1-.2-.3-.3-.6-.5-.9,0,0,0,0,0,0,0-.1,0-.3-.1-.4,0,0,0-.1,0-.2v-1.2c0,0,0-.1,0-.2Z"/>
+    <path fill="#0433ff" d="M29.5,62.6s0-.1,0-.1c1.4-5.5,11.8-11.2,16.7-13.8,14.7-7,30.5-11.3,46.3-14.7,3.6-.8,7.3-1.5,11-2.1,6.7-1.5,3.2-9.7-2.9-7.6-6.5,1.1-12.9,2.5-19.3,4-14.8,3.7-29.6,8.1-43.1,15.4-6.9,3.9-15.6,9.2-17.5,17.4,0,.4-.2.9-.1,1.4v1c0,.3,0,.7.1,1,3.6,15.9,45.5,20.9,59.6,22.3,6.6.8,13.3,1.1,19.9,1.5,2,.6,3.1-2,.8-2.3-1,0-2-.2-3.1-.3,0,0-.2,0-.2,0,0,0-.2,0-.2,0,0,0-.2,0-.3,0-17-1.6-34.2-4-50.4-9.8-3.8-1.3-7.5-2.9-10.9-5.1-2.2-1.4-4.4-2.9-5.9-5.1-.2-.3-.3-.6-.5-.9,0,0,0,0,0,0,0-.1,0-.3-.1-.4,0,0,0-.1,0-.2v-1.2c0,0,0-.1,0-.2Z"/>
+    <path fill="#9cadff" d="M29.5,70.5s0-.1,0-.1c1.4-5.5,11.8-11.2,16.7-13.8,14.7-7,30.5-11.3,46.3-14.7,3.6-.8,7.3-1.5,11-2.1,6.7-1.5,3.2-9.7-2.9-7.6-6.5,1.1-12.9,2.5-19.3,4-14.8,3.7-29.6,8.1-43.1,15.4-6.9,3.9-15.6,9.2-17.5,17.4,0,.4-.2.9-.1,1.4v1c0,.3,0,.7.1,1,3.6,15.9,45.5,20.9,59.6,22.3,6.6.8,13.3,1.1,19.9,1.5,2,.6,3.1-2,.8-2.3-1,0-2-.2-3.1-.3,0,0-.2,0-.2,0,0,0-.2,0-.2,0,0,0-.2,0-.3,0-17-1.6-34.2-4-50.4-9.8-3.8-1.3-7.5-2.9-10.9-5.1-2.2-1.4-4.4-2.9-5.9-5.1-.2-.3-.3-.6-.5-.9,0,0,0,0,0,0,0-.1,0-.3-.1-.4,0,0,0-.1,0-.2v-1.2c0,0,0-.1,0-.2Z"/>
+    <path fill="#f5f3e6" d="M29.5,78.4s0-.1,0-.1c1.4-5.5,11.8-11.2,16.7-13.8,14.7-7,30.5-11.3,46.3-14.7,3.6-.8,7.3-1.5,11-2.1,6.7-1.5,3.2-9.7-2.9-7.6-6.5,1.1-12.9,2.5-19.3,4-14.8,3.7-29.6,8.1-43.1,15.4-6.9,3.9-15.6,9.2-17.5,17.4,0,.4-.2.9-.1,1.4v1c0,.3,0,.7.1,1,3.6,15.9,45.5,20.9,59.6,22.3,6.6.7,13.2,1.1,19.7,1.5.3,0,.6,0,.9,0,1.7,0,1.7-2.4,0-2.4-1,0-2-.2-3.1-.3,0,0-.2,0-.2,0,0,0-.2,0-.2,0,0,0-.2,0-.3,0-17-1.6-34.2-4-50.4-9.8-3.8-1.3-7.5-2.9-10.9-5.1-2.2-1.4-4.4-2.9-5.9-5.1-.2-.3-.3-.6-.5-.9,0,0,0,0,0,0,0-.1,0-.3-.1-.4,0,0,0-.1,0-.2v-1.2c0,0,0-.1,0-.2Z"/>
+    <path fill="#ff1100" d="M29.5,86.4s0-.1,0-.1c1.4-5.5,11.8-11.2,16.7-13.8,14.7-7,30.5-11.3,46.3-14.7,3.6-.8,7.3-1.5,11-2.1,6.7-1.5,3.2-9.7-2.9-7.6-6.5,1.1-12.9,2.5-19.3,4-14.8,3.7-29.6,8.1-43.1,15.4-6.9,3.9-15.6,9.2-17.5,17.4,0,.4-.2.9-.1,1.4v1c0,.3,0,.7.1,1,3.6,15.9,45.5,20.9,59.6,22.3,6.6.7,13.2,1.1,19.7,1.5.3,0,.6,0,.9,0,1.7,0,1.7-2.4,0-2.4-1,0-2-.2-3.1-.3,0,0-.2,0-.2,0,0,0-.2,0-.2,0,0,0-.2,0-.3,0-17-1.6-34.2-4-50.4-9.8-3.8-1.3-7.5-2.9-10.9-5.1-2.2-1.4-4.4-2.9-5.9-5.1-.2-.3-.3-.6-.5-.9,0,0,0,0,0,0,0-.1,0-.3-.1-.4,0,0,0-.1,0-.2v-1.2c0,0,0-.1,0-.2Z"/>
+  </svg>
+  <div>
+    <h1>Aero Vote Radar</h1>
+    <p class="sub">Where your sAERO earns the most on Aero.<br>
+      Enter how much you hold and see what each pool pays you per day, after your own stake dilutes it.</p>
+  </div>
+</header>
+
+<!-- Aero (sAERO) ranking, read from data/v3.json (src/v3-cli.ts, every scheduled
+     scan). Hidden until the scan reports the Base contracts live. -->
+<section id="aeroRadar" hidden>
+  <p class="meta" id="arMeta"></p>
+  <div class="ar-hero">
+    <label class="ar-hero-q" for="arAmount">If you hold <input id="arAmount" type="number" min="0" step="any" value="10000" inputmode="decimal"> sAERO</label>
+    <div class="ar-hero-a" id="arAnswerText"></div>
+    <a class="primary" href="https://app.aero.xyz/markets/allocate" target="_blank" rel="noreferrer">Allocate on Aero</a>
+  </div>
+  <div class="panel ar-ap" id="arAp" hidden>
+    <div>
+      <div class="ar-ap-l" id="arApLabel">Aero Autopilot moves next in</div>
+      <div class="ar-ap-n num" id="arApIn">&mdash;</div>
+      <div class="ar-ap-w" id="arApWhen"></div>
+    </div>
+    <div class="ar-bell">
+      <button class="primary" type="button" id="arBell" aria-expanded="false">&#128276; Notify me</button>
+      <div class="panel ar-bell-pop" id="arBellPop" hidden>
+        <label><input type="checkbox" id="arPushAp"> <span>10 min before Autopilot moves</span></label>
+        <label><input type="checkbox" id="arPushWallet"> <span>When my 47 h are up <span class="hint" id="arPushWal">(look up your wallet below first)</span></span></label>
+        <p class="hint" id="arPushMsg">Your browser shows the alert even with this tab closed. Turn off any time.</p>
+      </div>
+    </div>
+  </div>
+  <div class="ar-record" id="arRecord" hidden>
+    <h3>Track record: what the radar said, and what it paid</h3>
+    <div class="scroll cards"><table>
+      <thead><tr><th>When</th><th>Radar said</th><th class="num">It showed</th><th class="num">It paid</th><th class="num">A typical pool paid</th></tr></thead>
+      <tbody id="arRecordBody"></tbody>
+    </table></div>
+    <p class="hint" id="arRecordNote"></p>
+  </div>
+  <div class="ar-guide" id="guide">
+    <div><b>Type how much sAERO you have.</b> Add your wallet if you like: it shows when your 47 h timer runs out.</div>
+    <div><b>Look at "You'd earn / day".</b> The radar splits your amount across up to 3 pools, so your own stake doesn't dilute your income.</div>
+    <div><b>Press "Allocate on Aero"</b> and set the same percentages there. You sign in your own wallet. Come back when your 47 h are up.</div>
+  </div>
+  <div class="panel">
+    <div class="ar-controls">
+      <div class="field">
+        <label for="arAddr">Wallet (optional, shows your 47 h timer)</label>
+        <div class="addr-row">
+          <input id="arAddr" type="text" spellcheck="false" autocomplete="off" placeholder="0x…">
+          <button id="arLookup" class="primary" type="button">Look up</button>
+        </div>
+        <div class="lookup-msg" id="arMsg"></div>
+      </div>
+    </div>
+    <div class="totals ar-totals">
+      <div class="stat hi"><div class="n num c-good" id="arBest">&mdash;</div><div class="l">Best pool for your sAERO, per day</div></div>
+      <div class="stat"><div class="n num" id="arTimer">47 h</div><div class="l" id="arTimerLabel">Between moves of one stake (enter a wallet for yours)</div></div>
+      <div class="stat"><div class="n num" id="arCurrent">&mdash;</div><div class="l">What your current split pays per day</div></div>
+      <div class="stat"><div class="n num">1.7&times;</div><div class="l">Every 47 h vs weekly, backtest before Aero. First 10 live days: about 1.2&times;</div></div>
+    </div>
+    <p class="hint" id="arTimers" style="margin:12px 0 0" hidden></p>
+    <div class="ar-callout" id="arCallout" hidden></div>
+  </div>
+
+  <h2>Where to point your sAERO now</h2>
+  <p class="h2note">Best first for <b>your</b> amount. "You'd earn" already counts that your sAERO makes the pool more crowded. Trading fees and the project bonus are what the whole pool pays a day, shared by everyone in it. Only pools with 100,000+ sAERO. Aero's own APR counts fees over the last 48 h, the radar over 96 h, so the two can differ; both are right. <span id="arEarly"></span></p>
+  <div class="ar-nets" id="arChains"></div>
+  <div class="scroll cards"><table id="arTable">
+    <thead><tr><th>Pool</th><th class="num">Put here</th><th class="num">You'd earn / day</th><th class="num">Trading fees / day</th><th class="num">Project bonus / day</th><th class="num">Already in pool</th><th class="num">Trend</th></tr></thead>
+    <tbody id="arBody"></tbody>
+  </table></div>
+  <div class="ar-split">
+    <a class="primary" href="https://app.aero.xyz/markets/allocate" target="_blank" rel="noreferrer">Allocate on Aero</a>
+    <button id="arCopy" type="button">Copy percentages</button>
+    <span class="hint" style="margin:0">Opens Aero's Allocate page; you sign in your own wallet. This page never holds funds.</span>
+  </div>
+
+  <h2>Steadiest pools</h2>
+  <p class="h2note">For a steady payout rather than the top spot: pools that paid at least half their own average in 75% of the hours or more. "Per day for you" is your amount on the same figures as the table above. The 7-day average and lowest hour are for 10,000 sAERO, each hour counting that hour's last 24 h of fees, so they run higher when fees are rising. Incentives last only while a project keeps streaming them; fees don't depend on that.</p>
+  <p class="hint" id="arSteadyWait">Needs a day of hourly scans; the table fills in on its own.</p>
+  <div class="scroll" id="arSteadyWrap" hidden><table>
+    <thead><tr><th>Pool</th><th class="num">Per day for you</th><th class="num">Fees / day</th><th class="num">Incentives / day</th><th class="num">7-day average / day (10K)</th><th class="num">Lowest hour (10K)</th><th class="num">Held up</th></tr></thead>
+    <tbody id="arSteadyBody"></tbody>
+  </table></div>
+
+  <div id="arTopWrap" hidden>
+  <h2>What the top allocators hold now</h2>
+  <p class="h2note">The 10 sAERO positions (10,000+) that earned the most per sAERO over the last 7 days, and where each is allocated <b>right now</b>, read onchain. A past return, not a promise: they move every 47 h. Ranking: <a href="https://dromos.kitchen/dashboards/aero-analytics?view=allocation#caps" target="_blank" rel="noreferrer">dromos.kitchen</a>.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>#</th><th class="num">sAERO</th><th class="num">Earned 7 d</th><th class="num">Return / yr</th><th style="text-align:left">Allocated now</th><th class="num">Last move</th></tr></thead>
+    <tbody id="arTopBody"></tbody>
+  </table></div>
+  <p class="hint" style="margin:14px 0 8px">Their pools together, each position counted once whatever its size. "Per day for you" is your whole amount in that pool, after it dilutes the pool.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Pool</th><th class="num">Share of the top 10</th><th class="num">Per day for you</th></tr></thead>
+    <tbody id="arTogetherBody"></tbody>
+  </table></div>
+  </div>
+
+  <h2>How long to hold a pool</h2>
+  <p class="h2note">How much more you earn by moving to the best pool more often, compared with moving once a week. Backtest on 3 weeks of Aerodrome pool fees before Aero (Sep 27 – Oct 20), fees only.</p>
+  <div class="panel">
+    <div class="ar-hold">
+      <div><div class="n num">1.7&times;</div><div class="ar-bar" style="width:100%"></div><div class="hint">every 47 h</div></div>
+      <div><div class="n num">1.3&times;</div><div class="ar-bar" style="width:75%"></div><div class="hint">every 4 days</div></div>
+      <div><div class="n num">1&times;</div><div class="ar-bar" style="width:59%"></div><div class="hint">once a week</div></div>
+      <div><div class="n num">0.7&times;</div><div class="ar-bar" style="width:41%"></div><div class="hint">every 2 weeks</div></div>
+    </div>
+    <p class="hint">So far on Aero itself: about 1.2&times; over the first 10 days, a short sample. Top pools cool off fast: a day later they pay about 38% of what put them on top.</p>
+    <p class="hint"><b>Tip:</b> the 47 h timer runs per stake, not per wallet. Split your sAERO into a few stakes and each gets its own timer &mdash; a new stake's first allocation has no wait.</p>
+  </div>
+</section>
+
+<footer>
+  Data read on-chain from <a href="https://aero.xyz" target="_blank" rel="noopener noreferrer">Aero</a>'s contracts on seven networks. Open source —
+  <a href="https://github.com/araxis33/aero-vote-radar" target="_blank" rel="noopener noreferrer">github.com/araxis33/aero-vote-radar</a>.
+  Part of <a href="https://deftools.xyz">deftools.xyz</a>. Not affiliated with Aero.
+</footer>
+
+</div>
+
+<script>
+const SEL_BALANCE_OF = "0x70a08231";       // balanceOf(address)
+const SEL_POWER_OF = "0xe7e242d4";         // balanceOfNFT(uint256)
+
+// Tried in order; the first that answers wins. One endpoint going down or
+// dropping its CORS headers shouldn't take the feature with it.
+const RPCS = [
+  "https://base-rpc.publicnode.com",
+  "https://mainnet.base.org",
+  "https://base.llamarpc.com",
+];
+
+// A public RPC can also just hang with no response and no error — a stalled
+// connection that a plain try/catch never sees. Without a timeout that would
+// leave the "Look up" button spinning forever instead of moving on to the
+// next endpoint in RPCS, even though the retry loop below exists precisely to
+// route around a bad endpoint. Mirrors DEFILLAMA_TIMEOUT_MS's use of
+// AbortSignal.timeout in src/prices.ts for the same reason.
+const RPC_TIMEOUT_MS = 8000;
+
+const word = (hex) => hex.replace(/^0x/, "").toLowerCase().padStart(64, "0");
+const hexOf = (n) => word(BigInt(n).toString(16));
+
+let rpcIndex = 0;
+
+// A JSON-RPC error whose message names a revert/panic, as opposed to one about
+// the request itself (rate limit, malformed input, node trouble). Only the
+// former is a fact about the contract call, so ethCall stops retrying on it.
+const isRevertMessage = (message) => /revert|invalid opcode|out-of-bounds|panic/i.test(message || "");
+
+async function ethCall(data, to) {
+  let lastErr;
+  for (let attempt = 0; attempt < RPCS.length; attempt++) {
+    const url = RPCS[(rpcIndex + attempt) % RPCS.length];
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_call", params: [{ to, data }, "latest"] }),
+        signal: AbortSignal.timeout(RPC_TIMEOUT_MS),
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const json = await res.json();
+      if (json.error) {
+        const err = new Error(json.error.message || "rpc error");
+        err.isRevert = isRevertMessage(json.error.message);
+        throw err;
+      }
+      rpcIndex = (rpcIndex + attempt) % RPCS.length; // stick with whatever worked
+      return json.result;
+    } catch (err) {
+      lastErr = err;
+      // A genuine revert is a fact about the call, not the endpoint — every
+      // node reverts the same call the same way, so trying the next RPC
+      // cannot turn it into an answer. Stop here rather than let two more
+      // round trips risk losing the signal to an unrelated failure on a
+      // later endpoint.
+      if (err.isRevert) throw err;
+    }
+  }
+  throw lastErr || new Error("all RPC endpoints failed");
+}
+
+const usd = (n) =>
+  n >= 1000 ? "$" + Math.round(n).toLocaleString("en-US")
+  : n >= 1 ? "$" + n.toFixed(2)
+  : "$" + n.toFixed(4);
+const num = (n, d) => n.toLocaleString("en-US", { maximumFractionDigits: d === undefined ? 0 : d });
+const pctChange = (n) => (n >= 0 ? "+" : "") + Math.round(n * 100).toLocaleString("en-US") + "%";
+function dilutedPerDay(usdPerDay, votes, amount) {
+  return amount > 0 ? usdPerDay * amount / (votes + amount) : 0;
+}
+
+// --- Aero (sAERO) radar ---------------------------------------------------
+// Reads data/v3.json (src/v3-cli.ts). A wallet is looked up on Aero's Base
+// contracts (app.aero.xyz/docs/security): stakes from the VotingEscrow, the
+// 47 h timer and current split from the LeafVoter (tokenStates.lastAllocated +
+// allocationCooldown − accumulatedCooldownReduction, as ILeafVoter documents).
+// Every network has its own LeafVoter at the same address, keyed by the Base
+// stake id, so each stake has a timer and a split per network.
+const AR_VE = "0xbf7977e1521e9a3032bf7243ee4712f311f13915";
+const AR_LEAF_VOTER = "0x382409fad8503fbcdbb27a4211551fa03e884078";
+const AR_SEL_TOKEN_OF_OWNER = "0x2f745c59";   // tokenOfOwnerByIndex(address,uint256)
+const AR_SEL_TOKEN_STATES = "0xaa9f3eca";     // tokenStates(uint256) -> (operator, lastAllocated, canVoteForZeroCapGauges, chainAllocation)
+const AR_SEL_COOLDOWN = "0x6f5aa6ab";         // allocationCooldown()
+const AR_SEL_REDUCTION = "0xbe8cfed2";        // accumulatedCooldownReduction(uint256)
+const AR_SEL_GAUGES = "0xd596efe1";           // allocatedGauges(uint256) -> address[]
+const AR_SEL_ALLOCATION = "0x1c3a964f";       // allocations(uint256,address) -> uint128
+// Same floor the earlier per-day blocks used: below it one stake moves the pool's rate.
+const AR_MIN_WEIGHT = 100000;
+const AR_MAX_POOLS = 3;
+const AR_STEPS = 20;
+const AR_MAX_STAKES = 20;
+
+const AR_CHAIN_NAMES = { base: "Base", ethereum: "Ethereum", optimism: "OP Mainnet", arbitrum: "Arbitrum", ink: "Ink", robinhood: "Robinhood Chain", arc: "Arc" };
+// Endpoints that answer eth_call from a browser (CORS), measured 2026-10-24.
+// Base goes through ethCall and its RPCS list.
+const AR_CHAIN_RPCS = {
+  ethereum: ["https://ethereum-rpc.publicnode.com"],
+  optimism: ["https://optimism-rpc.publicnode.com", "https://mainnet.optimism.io"],
+  arbitrum: ["https://arbitrum-one-rpc.publicnode.com", "https://arb1.arbitrum.io/rpc"],
+  ink: ["https://rpc-gel.inkonchain.com", "https://rpc-qnd.inkonchain.com", "https://ink-rpc.publicnode.com"],
+  robinhood: ["https://rpc.mainnet.chain.robinhood.com"],
+  arc: ["https://rpc.mainnet.arc.io"],
+};
+
+let arData = null;
+let arWallet = null;
+let arChain = "all";
+const arEl = (id) => document.getElementById(id);
+const arPerDay = (g) => g.feesUsdPerDay + g.incentivesUsdPerDay;
+const arChainOf = (g) => g.chain || "base";
+// sAERO the looked-up wallet already has in each pool, by "chain:gauge". The
+// suggested split moves the whole stake, so it is left out of the pool's weight
+// before diluting; otherwise it would count twice.
+let arOwn = new Map();
+const arW = (g) => Math.max(0, g.weight - (arOwn.get(arChainOf(g) + ":" + g.gauge.toLowerCase()) || 0));
+// Pools worth ranking on the chosen network, best for `amount` first.
+const arPools = (amount) =>
+  arData.gauges
+    .filter((g) => arW(g) >= AR_MIN_WEIGHT && arPerDay(g) > 0 && (arChain === "all" || arChainOf(g) === arChain))
+    .map((g) => ({ g, mine: dilutedPerDay(arPerDay(g), arW(g), amount) }))
+    .sort((a, b) => b.mine - a.mine);
+// The suggested split since 3.11.2026: steady pools only, the ones whose weakest hour
+// of the week paid most (src/v3History.ts steadyPick), split evenly. The hot top pick paid less
+// than a typical pool in 2 of 3 windows before; hot pools stay in the table below.
+const arSteadySplit = (amount) => {
+  const steady = arPools(amount).map((x) => x.g)
+    .filter((g) => g.steady && g.steady.avgPer10k > 0 && g.steady.held >= AR_STEADY_SHARE * g.steady.of)
+    .sort((a, b) => b.steady.minPer10k - a.steady.minPer10k)
+    .slice(0, AR_MAX_POOLS);
+  if (!steady.length || !(amount > 0)) return { split: arSplit(arPools(amount).map((x) => x.g), amount), steady: false };
+  // Spread evenly (34/33/33): in the backtest the three together beat the single best.
+  const pct = steady.map((_, i) => Math.floor(100 / steady.length) + (i < 100 % steady.length ? 1 : 0));
+  return { split: steady.map((g, i) => ({ g, share: pct[i] / 100, perDay: dilutedPerDay(arPerDay(g), arW(g), amount * pct[i] / 100) })), steady: true };
+};
+
+// One button per network that has rankable pools, plus "All networks".
+function arRenderChains() {
+  const box = arEl("arChains");
+  box.innerHTML = "";
+  const counts = {};
+  for (const g of arData.gauges) if (g.weight >= AR_MIN_WEIGHT && arPerDay(g) > 0) counts[arChainOf(g)] = (counts[arChainOf(g)] || 0) + 1;
+  for (const key of ["all", ...Object.keys(AR_CHAIN_NAMES).filter((k) => counts[k])]) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "ar-net" + (key === arChain ? " on" : "");
+    b.textContent = key === "all" ? "All networks" : AR_CHAIN_NAMES[key] + " " + counts[key];
+    b.addEventListener("click", () => { arChain = key; arRenderChains(); arRender(); });
+    box.append(b);
+  }
+}
+const arName = (g) => (g.symbol0 ? g.symbol0 + "/" + g.symbol1 : g.pool.slice(0, 6) + "…" + g.pool.slice(-4));
+
+// Greedy in 5% steps: each step goes where it adds the most after dilution,
+// then the split is redone over the top AR_MAX_POOLS so it stays short enough to enter by hand.
+function arSplit(pools, amount) {
+  const run = (cands) => {
+    const alloc = new Map(cands.map((g) => [g, 0]));
+    const step = amount / AR_STEPS;
+    for (let i = 0; i < AR_STEPS; i++) {
+      let best = null, gain = -1;
+      for (const g of cands) {
+        const a = alloc.get(g);
+        const d = dilutedPerDay(arPerDay(g), arW(g), a + step) - dilutedPerDay(arPerDay(g), arW(g), a);
+        if (d > gain) { gain = d; best = g; }
+      }
+      alloc.set(best, alloc.get(best) + step);
+    }
+    return [...alloc].filter(([, a]) => a > 0).sort((x, y) => y[1] - x[1]);
+  };
+  if (!(amount > 0) || pools.length === 0) return [];
+  let out = run(pools.slice(0, 15));
+  if (out.length > AR_MAX_POOLS) out = run(out.slice(0, AR_MAX_POOLS).map(([g]) => g));
+  return out.map(([g, a]) => ({ g, share: a / amount, perDay: dilutedPerDay(arPerDay(g), arW(g), a) }));
+}
+
+function arTrend(g) {
+  if (arData.windowHours < 36 || !(g.feesUsdPerDay > 0)) return ["new", ""];
+  const r = g.fees24hUsdPerDay / g.feesUsdPerDay - 1;
+  if (r > 0.1) return ["rising " + pctChange(r), "c-good"];
+  if (r < -0.1) return ["cooling " + pctChange(r).replace("-", "−"), "c-bad"];
+  return ["steady", ""];
+}
+
+function arCell(row, text, cls) {
+  const td = document.createElement("td");
+  td.className = "num" + (cls ? " " + cls : "");
+  td.textContent = text;
+  row.append(td);
+}
+
+function arNameCell(g) {
+  const name = document.createElement("td");
+  const badge = document.createElement("span");
+  badge.className = "badge " + (g.kind && g.kind.startsWith("CL") ? "c" : g.kind === "sAMM" ? "s" : "v");
+  badge.textContent = g.kind ? g.kind.replace(/^CL\d+$/, "CL") : "?";
+  const chip = document.createElement("span");
+  chip.className = "ar-chip";
+  chip.textContent = AR_CHAIN_NAMES[arChainOf(g)] || arChainOf(g);
+  name.append(badge, document.createTextNode(arName(g)), chip);
+  return name;
+}
+
+// Pools that kept paying hour after hour (src/v3History.ts): at least 75% of the
+// hourly samples at half the pool's own average or more. "Per day for you" and the
+// order use the same figures as the ranking above, so one pool never shows two
+// prices (Oct 27, Macro: the last-24 h basis read as "steady pays more than top").
+const AR_STEADY_SHARE = 0.75;
+const AR_STEADY_ROWS = 5;
+const arSteadyNow = (g, amount) => dilutedPerDay(arPerDay(g), arW(g), amount);
+function arRenderSteady(amount) {
+  const steady = arData.gauges
+    .filter((g) => g.steady && g.weight >= AR_MIN_WEIGHT && g.steady.avgPer10k > 0 && g.steady.held >= AR_STEADY_SHARE * g.steady.of)
+    .filter((g) => arChain === "all" || arChainOf(g) === arChain)
+    .sort((a, b) => arSteadyNow(b, amount) - arSteadyNow(a, amount))
+    .slice(0, AR_STEADY_ROWS);
+  const body = arEl("arSteadyBody");
+  body.innerHTML = "";
+  arEl("arSteadyWrap").hidden = steady.length === 0;
+  arEl("arSteadyWait").hidden = steady.length > 0;
+  for (const g of steady) {
+    const tr = document.createElement("tr");
+    tr.append(arNameCell(g));
+    arCell(tr, usd(arSteadyNow(g, amount)), "ar-mine");
+    arCell(tr, g.feesUsdPerDay > 0 ? usd(g.feesUsdPerDay) : "$0");
+    arCell(tr, g.incentivesUsdPerDay > 0 ? usd(g.incentivesUsdPerDay) : "$0");
+    arCell(tr, usd(g.steady.avgPer10k));
+    arCell(tr, usd(g.steady.minPer10k));
+    arCell(tr, g.steady.held + " of " + g.steady.of + " h");
+    body.append(tr);
+  }
+}
+
+// Where the best allocators are pointed now: data/top-allocators.json (src/topAllocators.ts),
+// dromos.kitchen's 7-day ranking plus each position's split read from the LeafVoters.
+// A split newer than a day hasn't earned the rank it sits next to, so it says so.
+let arTop = null;
+const AR_TOP_STALE_H = 6;
+const AR_TOP_NEW_H = 24;
+const AR_TOP_SHOWN = 3;
+const AR_TOGETHER_ROWS = 8;
+const arGauge = (s) => arData.gauges.find((g) => arChainOf(g) === s.chain && g.gauge.toLowerCase() === s.gauge);
+const arSliceName = (s) => {
+  const g = arGauge(s);
+  const name = g ? arName(g) : s.gauge.slice(0, 6) + "…" + s.gauge.slice(-4);
+  return s.chain === "base" ? name : name + " (" + (AR_CHAIN_NAMES[s.chain] || s.chain) + ")";
+};
+const arAgo = (sec) => {
+  const h = (Date.now() / 1000 - sec) / 3600;
+  return h < 1 ? Math.max(1, Math.round(h * 60)) + " min ago" : h < 48 ? Math.round(h) + " h ago" : (h / 24).toFixed(1) + " d ago";
+};
+function arRenderTop(amount) {
+  const wrap = arEl("arTopWrap");
+  wrap.hidden = !arTop || !arTop.positions.length || Date.now() - Date.parse(arTop.checkedAt) > AR_TOP_STALE_H * 3600000;
+  if (wrap.hidden) return;
+  const body = arEl("arTopBody");
+  body.innerHTML = "";
+  for (const p of arTop.positions) {
+    const tr = document.createElement("tr");
+    const first = document.createElement("td");
+    const tag = document.createElement("span");
+    tag.className = "ar-chip";
+    tag.textContent = "#" + p.id;
+    first.append(document.createTextNode(String(p.rank)), tag);
+    tr.append(first);
+    arCell(tr, num(p.sAero));
+    arCell(tr, usd(p.earned7d));
+    arCell(tr, Math.round(p.apr7d * 100) + "%", "c-good");
+    const where = document.createElement("td");
+    where.className = "ar-where";
+    if (!p.split.length) where.textContent = "nothing allocated";
+    p.split.slice(0, AR_TOP_SHOWN).forEach((s, i) => {
+      const b = document.createElement("b");
+      b.textContent = Math.round(s.share * 100) + "%";
+      where.append(i ? " · " : "", b, " " + arSliceName(s));
+    });
+    if (p.split.length > AR_TOP_SHOWN) where.append(" · +" + (p.split.length - AR_TOP_SHOWN) + " more");
+    if (p.lastMoved && Date.now() / 1000 - p.lastMoved < AR_TOP_NEW_H * 3600) {
+      const fresh = document.createElement("span");
+      fresh.className = "ar-new";
+      fresh.textContent = "new split, not yet proven";
+      where.append(fresh);
+    }
+    if (p.lastMoved) {
+      const moved = document.createElement("span");
+      moved.className = "ar-moved";
+      moved.textContent = "Last move " + arAgo(p.lastMoved);
+      where.append(moved);
+    }
+    tr.append(where);
+    arCell(tr, p.lastMoved ? arAgo(p.lastMoved) : "—");
+    body.append(tr);
+  }
+  const together = arEl("arTogetherBody");
+  together.innerHTML = "";
+  for (const s of arTop.together.slice(0, AR_TOGETHER_ROWS)) {
+    const g = arGauge(s);
+    const tr = document.createElement("tr");
+    if (g) tr.append(arNameCell(g));
+    else { const td = document.createElement("td"); td.textContent = arSliceName(s); tr.append(td); }
+    arCell(tr, Math.round(s.share * 100) + "%", "pct");
+    arCell(tr, g ? usd(dilutedPerDay(arPerDay(g), arW(g), amount)) : "—", g ? "ar-mine" : "");
+    together.append(tr);
+  }
+}
+
+const AR_HEADS = [...document.querySelectorAll("#arTable thead th")].map((th) => th.textContent);
+// Open track record: the last three finished 47 h windows on a fixed grid from the
+// first saved pick (AR_RECORD_FROM), so a row changes only when a new window
+// ends, not every hourly scan. Each row: the pool the radar put
+// first for 10,000 sAERO, the daily figure it showed then (times 47/24), and what
+// that pool actually paid over those 47 h. History samples are fees over the
+// trailing 24 h plus incentives, per day for 10,000 sAERO after dilution, so the
+// sample 24 h after the pick covers the first day and the one 47 h after covers
+// the last 23 h. "A typical pool" is the median of the same figure over every
+// pool in the history at the time of the pick. Picks before they were recorded
+// (28.10) were rebuilt once from the history the way the radar ranks (the average
+// of the samples 0, 24, 48 and 72 h before, standing in for its 96 h of fees) and
+// saved into picks with rebuilt: true, since the history then kept only 7 days and a
+// rebuild done later would drift. The rebuild below stays as a fallback.
+const AR_RECORD_FROM = Date.parse("2026-10-28T22:47:15.785Z");
+function arRenderRecord(h) {
+  const at = h.at.map((t) => Date.parse(t)), H = 3600000;
+  const near = (t) => {
+    let best = -1;
+    at.forEach((x, i) => { if (Math.abs(x - t) <= 2 * H && (best < 0 || Math.abs(x - t) < Math.abs(at[best] - t))) best = i; });
+    return best < 0 ? null : best;
+  };
+  const paid = (k, a, b) => { const p = h.pools[k]; return p && p[a] != null && p[b] != null ? p[a] + p[b] * 23 / 24 : null; };
+  const names = new Map(arData.gauges.map((g) => [arChainOf(g) + ":" + g.gauge.toLowerCase(), arName(g) + (arChainOf(g) === "base" ? "" : " (" + (AR_CHAIN_NAMES[arChainOf(g)] || arChainOf(g)) + ")")]));
+  const body = arEl("arRecordBody");
+  body.innerHTML = "";
+  const heads = [...document.querySelectorAll("#arRecord thead th")].map((th) => th.textContent);
+  let rebuilt = false, rows = 0;
+  const done = Math.floor((at[at.length - 1] - AR_RECORD_FROM) / (47 * H));
+  for (let n = 1; n <= 3; n++) {
+    const t0 = AR_RECORD_FROM + 47 * (done - n) * H;
+    const i0 = near(t0), i24 = near(t0 + 24 * H), i47 = near(t0 + 47 * H);
+    if (i0 === null || i24 === null || i47 === null) continue;
+    let pick = h.picks && h.picks[i0];
+    if (!pick) {
+      const back = [0, 1, 2, 3].map((d) => near(t0 - 24 * d * H)).filter((i) => i !== null);
+      for (const [k, col] of Object.entries(h.pools)) {
+        if (col[i0] == null || back.some((i) => col[i] == null)) continue;
+        const avg = back.reduce((a, i) => a + col[i], 0) / back.length;
+        if (!pick || avg > pick.per10k) pick = { pool: k, per10k: avg, rebuilt: true };
+      }
+    }
+    rebuilt = rebuilt || !!(pick && pick.rebuilt);
+    const got = pick && paid(pick.pool, i24, i47);
+    if (got == null) continue;
+    const all = Object.keys(h.pools).filter((k) => h.pools[k][i0] != null).map((k) => paid(k, i24, i47)).filter((x) => x != null).sort((a, b) => a - b);
+    const typical = all[Math.floor(all.length / 2)];
+    const tr = document.createElement("tr");
+    const when = new Date(at[i0]).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC" }) + " UTC" + (pick.rebuilt ? " *" : "");
+    const cell = (text, cls) => { const td = document.createElement("td"); td.className = cls || ""; td.textContent = text; tr.append(td); };
+    cell(when);
+    cell(names.get(pick.pool) || pick.pool.split(":")[1].slice(0, 8) + "…");
+    cell(usd(pick.per10k * 47 / 24), "num");
+    cell(usd(got), "num " + (got > typical ? "c-good" : "c-bad"));
+    cell(usd(typical), "num");
+    tr.querySelectorAll("td").forEach((td, i) => { td.dataset.label = heads[i]; });
+    body.append(tr);
+    rows++;
+  }
+  arEl("arRecord").hidden = rows === 0;
+  arEl("arRecordNote").textContent = "On 10,000 sAERO, over the 47 h a stake stays put. \"It showed\" is the radar's figure at that moment: pools cool once others pile in, so read it as a ceiling, not a promise." +
+    (rebuilt ? " * Rebuilt from the hourly history; newer rows use the pick the radar saved at the time." : "");
+}
+
+// The daily figure counts to its new value as the amount is typed, so the change reads as a change.
+let arPaysNow = null, arPaysRaf = 0;
+const arStill = matchMedia("(prefers-reduced-motion: reduce)");
+function arCountTo(el, to) {
+  cancelAnimationFrame(arPaysRaf);
+  const from = arPaysNow;
+  if (from === null || from === to || arStill.matches) { arPaysNow = to; el.textContent = usd(to) + " a day"; return; }
+  const t0 = performance.now();
+  const step = (t) => {
+    const k = Math.min(1, (t - t0) / 300);
+    arPaysNow = from + (to - from) * (1 - (1 - k) ** 3);
+    el.textContent = usd(k < 1 ? arPaysNow : to) + " a day";
+    if (k < 1) arPaysRaf = requestAnimationFrame(step);
+    else arPaysNow = to;
+  };
+  el.textContent = usd(from) + " a day";
+  arPaysRaf = requestAnimationFrame(step);
+}
+
+function arRender() {
+  if (!arData) return;
+  const amount = Math.max(0, parseFloat(arEl("arAmount").value) || 0);
+  const pools = arPools(amount);
+  const { split, steady: steadySplit } = arSteadySplit(amount);
+  const splitPays = split.reduce((a, s) => a + s.perDay, 0);
+  arEl("arBest").textContent = pools.length && amount > 0 ? usd(pools[0].mine) : "—";
+  // The answer in one sentence at the top, so a first visit doesn't have to read the table for it.
+  const answer = arEl("arAnswerText");
+  answer.innerHTML = "";
+  if (split.length) {
+    const b = (t) => { const e = document.createElement("b"); e.textContent = t; return e; };
+    const where = document.createElement("div");
+    where.append(steadySplit ? "Steady pick: put " : "Put ");
+    split.forEach((s, i) => {
+      where.append(i ? (i === split.length - 1 ? " and " : ", ") : "", b(Math.round(s.share * 100) + "%"), " in " + arName(s.g));
+    });
+    const nets = [...new Set(split.map((s) => AR_CHAIN_NAMES[arChainOf(s.g)] || arChainOf(s.g)))];
+    where.append(" on " + nets.join(" and "));
+    const pays = document.createElement("div");
+    pays.className = "ar-hero-pay";
+    const paysB = b("");
+    pays.append("about ", paysB);
+    arCountTo(paysB, splitPays);
+    const note = document.createElement("small");
+    note.textContent = " at today's rates";
+    pays.append(note);
+    answer.append(where, pays);
+    if (steadySplit) {
+      const hot = document.createElement("div");
+      hot.className = "ar-hero-hot";
+      hot.innerHTML = 'Hotter pools pay more today but jump around: they are in <a href="#arTable">the table below</a>.';
+      answer.append(hot);
+    }
+  } else {
+    arPaysNow = null;
+    answer.textContent = amount > 0 ? "No pool is paying right now." : "Type how much sAERO you have.";
+  }
+
+  const shares = new Map(split.map((s) => [s.g, s]));
+  const rows = [...split.map((s) => s.g), ...pools.map((x) => x.g).filter((g) => !shares.has(g))].slice(0, 12);
+  const body = arEl("arBody");
+  body.innerHTML = "";
+  for (const g of rows) {
+    const tr = document.createElement("tr");
+    tr.append(arNameCell(g));
+    const s = shares.get(g);
+    arCell(tr, s ? Math.round(s.share * 100) + "%" : "—", s ? "pct" : "");
+    arCell(tr, usd(s ? s.perDay : dilutedPerDay(arPerDay(g), arW(g), amount)), s ? "ar-mine" : "");
+    arCell(tr, g.feesUsdPerDay > 0 ? usd(g.feesUsdPerDay) : "$0");
+    arCell(tr, g.incentivesUsdPerDay > 0 ? usd(g.incentivesUsdPerDay) : "$0");
+    arCell(tr, num(g.weight));
+    const [trend, cls] = arTrend(g);
+    arCell(tr, trend, cls);
+    // Column names on each cell: on a phone the rows turn into cards (.scroll.cards).
+    tr.querySelectorAll("td").forEach((td, i) => { td.dataset.label = AR_HEADS[i] || ""; });
+    body.append(tr);
+  }
+  arRenderSteady(amount);
+  arRenderTop(amount);
+
+  const timer = arEl("arTimer"), timerLabel = arEl("arTimerLabel"), current = arEl("arCurrent"), callout = arEl("arCallout"), timers = arEl("arTimers");
+  callout.hidden = true;
+  timers.hidden = true;
+  current.textContent = "—";
+  if (!arWallet) {
+    timer.textContent = "47 h";
+    timerLabel.textContent = "Between moves of one stake (enter a wallet for yours)";
+    return;
+  }
+  if (arWallet.stakes.length === 0) {
+    timer.textContent = "—";
+    timerLabel.textContent = "No sAERO stake in this wallet on Base";
+    return;
+  }
+  const nowSec = Date.now() / 1000;
+  const until = (t) => (t <= nowSec ? "now" : "in " + Math.ceil((t - nowSec) / 3600) + " h");
+  // Only networks a stake has allocated on have a running timer; a stake with
+  // none anywhere can make its first allocation right away.
+  const placedOn = arWallet.stakes.flatMap((s) => Object.entries(s.chains).filter(([, c]) => c.last).map(([chain, c]) => ({ chain, readyAt: c.readyAt })));
+  const next = placedOn.length ? Math.min(...placedOn.map((p) => p.readyAt)) : 0;
+  if (placedOn.length) {
+    const first = placedOn.reduce((a, b) => (b.readyAt < a.readyAt ? b : a));
+    timer.textContent = until(first.readyAt);
+    timerLabel.textContent = (placedOn.length > 1 ? "Your first stake can move again on " : "You can move your sAERO again on ") + AR_CHAIN_NAMES[first.chain];
+    const soonest = {};
+    for (const p of placedOn) soonest[p.chain] = Math.min(soonest[p.chain] ?? Infinity, p.readyAt);
+    timers.textContent = "Your timers: " + Object.keys(AR_CHAIN_NAMES).filter((k) => k in soonest).map((k) => AR_CHAIN_NAMES[k] + " " + until(soonest[k])).join(" · ") +
+      (arWallet.failed.length ? " · not read: " + arWallet.failed.map((k) => AR_CHAIN_NAMES[k]).join(", ") : "");
+    timers.hidden = false;
+  } else if (arWallet.failed.length) {
+    timer.textContent = "—";
+    timerLabel.textContent = "Could not read " + arWallet.failed.map((k) => AR_CHAIN_NAMES[k]).join(", ") + ". Try again in a moment.";
+  } else {
+    timer.textContent = "now";
+    timerLabel.textContent = "Not allocated yet: the first allocation has no wait";
+  }
+  const byGauge = new Map(arData.gauges.map((g) => [arChainOf(g) + ":" + g.gauge.toLowerCase(), g]));
+  let pays = 0, placed = 0;
+  for (const st of arWallet.stakes) {
+    for (const [chain, c] of Object.entries(st.chains)) {
+      for (const a of c.allocs) {
+        const g = byGauge.get(chain + ":" + a.gauge);
+        placed += a.amount;
+        if (g && g.weight > 0) pays += arPerDay(g) * Math.min(1, a.amount / g.weight);
+      }
+    }
+  }
+  if (placed > 0) {
+    current.textContent = usd(pays);
+    if (splitPays > pays) {
+      callout.hidden = false;
+      callout.innerHTML = (next <= nowSec ? "You can move now: " : "When your 47 h are up: ") +
+        "moving to the suggested split below would pay about <b>" + usd(splitPays) + " a day</b> instead of <b>" + usd(pays) + "</b>.";
+    }
+  } else {
+    current.textContent = "$0";
+  }
+}
+
+// eth_call on the LeafVoter of `chain`, trying its endpoints in order.
+async function arLeafCall(chain, data) {
+  if (chain === "base") return ethCall(data, AR_LEAF_VOTER);
+  let lastErr;
+  for (const url of AR_CHAIN_RPCS[chain]) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_call", params: [{ to: AR_LEAF_VOTER, data }, "latest"] }),
+        signal: AbortSignal.timeout(RPC_TIMEOUT_MS),
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const json = await res.json();
+      if (json.error) throw new Error(json.error.message || "rpc error");
+      return json.result;
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr;
+}
+
+// One stake's timer and split on one network.
+async function arReadStakeOn(chain, id, cooldown) {
+  const big = (hex) => BigInt(hex === "0x" ? 0 : hex);
+  const state = (await arLeafCall(chain, AR_SEL_TOKEN_STATES + hexOf(id))).slice(2);
+  const last = Number(BigInt("0x" + (state.slice(64, 128) || "0")));
+  const reduction = Number(big(await arLeafCall(chain, AR_SEL_REDUCTION + hexOf(id))));
+  const list = (await arLeafCall(chain, AR_SEL_GAUGES + hexOf(id))).slice(2);
+  const n = list.length >= 128 ? Number(BigInt("0x" + list.slice(64, 128))) : 0;
+  const allocs = [];
+  for (let k = 0; k < n; k++) {
+    const gauge = "0x" + list.slice(128 + k * 64 + 24, 128 + (k + 1) * 64);
+    const raw = big(await arLeafCall(chain, AR_SEL_ALLOCATION + hexOf(id) + word(gauge)));
+    allocs.push({ gauge, amount: Number(raw) / 1e18 });
+  }
+  return { last, readyAt: last ? last + Math.max(0, cooldown - reduction) : 0, allocs };
+}
+
+async function arReadWallet(addr) {
+  const big = (hex) => BigInt(hex === "0x" ? 0 : hex);
+  const count = Number(big(await ethCall(SEL_BALANCE_OF + word(addr), AR_VE)));
+  const stakes = [];
+  for (let i = 0; i < Math.min(count, AR_MAX_STAKES); i++) {
+    const id = big(await ethCall(AR_SEL_TOKEN_OF_OWNER + word(addr) + hexOf(i), AR_VE));
+    const power = Number(big(await ethCall(SEL_POWER_OF + hexOf(id), AR_VE))) / 1e18;
+    stakes.push({ id, power, chains: {} });
+  }
+  // Networks are read in parallel; one that doesn't answer is reported, not fatal.
+  const failed = [];
+  await Promise.all(Object.keys(AR_CHAIN_NAMES).map(async (chain) => {
+    try {
+      const cooldown = Number(big(await arLeafCall(chain, AR_SEL_COOLDOWN)));
+      for (const st of stakes) st.chains[chain] = await arReadStakeOn(chain, st.id, cooldown);
+    } catch {
+      for (const st of stakes) delete st.chains[chain];
+      failed.push(chain);
+    }
+  }));
+  return { stakes, failed, total: stakes.reduce((a, s) => a + s.power, 0), count };
+}
+
+arEl("arLookup").addEventListener("click", async () => {
+  arEv("radar_stakes");
+  const addr = arEl("arAddr").value.trim();
+  const msg = arEl("arMsg");
+  msg.className = "lookup-msg";
+  if (!/^0x[0-9a-fA-F]{40}$/.test(addr)) { msg.textContent = "Paste a 0x… wallet address."; msg.classList.add("err"); return; }
+  msg.textContent = "Reading your stakes on Aero…";
+  try {
+    arWallet = await arReadWallet(addr);
+    arOwn = new Map();
+    for (const st of arWallet.stakes)
+      for (const [chain, c] of Object.entries(st.chains))
+        for (const a of c.allocs) arOwn.set(chain + ":" + a.gauge, (arOwn.get(chain + ":" + a.gauge) || 0) + a.amount);
+    if (arWallet.total > 0) arEl("arAmount").value = Math.floor(arWallet.total);
+    msg.textContent = arWallet.count === 0 ? "No sAERO stake in this wallet on Base." :
+      arWallet.count + (arWallet.count === 1 ? " stake, " : " stakes, ") + num(arWallet.total) + " sAERO" +
+      (arWallet.count > AR_MAX_STAKES ? " (first " + AR_MAX_STAKES + " read)" : "") + ".";
+    msg.classList.add("ok");
+  } catch (err) {
+    arWallet = null;
+    arOwn = new Map();
+    msg.textContent = "Could not read the wallet (" + err.message + "). Try again in a moment.";
+    msg.classList.add("err");
+  }
+  arRender();
+  arPushWalletShown();
+  if (arPushPrefs.wallet) arPushSync(false).catch(() => {});
+});
+arEl("arAmount").addEventListener("input", arRender);
+
+// --- Aero Autopilot countdown and browser alerts (3.11.2026) ----------------
+// Autopilot's two stakes (relays found 31.10.2026) can move again 47 h after
+// their last allocation, read from the same LeafVoter as a wallet's timer.
+// Alerts are sent by the deftools-check Worker (base-tools/check-worker/push.js)
+// to this page's service worker (sw.js); the page sends only the time a
+// wallet's 47 h end, never the address.
+const AR_AUTOPILOT_STAKES = [20365, 20366];
+const AR_PUSH_API = "https://deftools-check.araxis67.workers.dev/push/";
+const arEv = (n) => { try { navigator.sendBeacon("https://deftools-check.araxis67.workers.dev/ev", n); } catch (e) { /* a counter never gets in the way */ } };
+const AR_VAPID = "BM4isbpzhnD995iVSo3vAWwfBPX9DYWBI_KHb6sIWWHTd99oPyBbi_Bg_DjTfP7IguLpC3ltHvk-75FGNd3M2pI";
+let arApReady = 0;
+
+async function arReadAutopilot() {
+  const cooldown = BigInt(await ethCall(AR_SEL_COOLDOWN, AR_LEAF_VOTER));
+  const times = await Promise.all(AR_AUTOPILOT_STAKES.map(async (id) => {
+    const [state, reduction] = await Promise.all([ethCall(AR_SEL_TOKEN_STATES + hexOf(id), AR_LEAF_VOTER), ethCall(AR_SEL_REDUCTION + hexOf(id), AR_LEAF_VOTER)]);
+    return Number(BigInt("0x" + state.slice(2 + 64, 2 + 128)) + cooldown - BigInt(reduction));
+  }));
+  arApReady = Math.min(...times);
+  arEl("arAp").hidden = false;
+  arApTick();
+}
+
+function arApTick() {
+  if (!arApReady) return;
+  const left = arApReady - Date.now() / 1000;
+  const d = new Date(arApReady * 1000);
+  const at = d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }) + ", " + d.toISOString().slice(11, 16) + " UTC";
+  if (left > 0) {
+    const h = Math.floor(left / 3600), m = Math.floor((left % 3600) / 60), s = Math.floor(left % 60);
+    arEl("arApLabel").textContent = "Aero Autopilot moves next in";
+    arEl("arApIn").innerHTML = (h ? h + " h " : "") + m + " m <small>" + String(s).padStart(2, "0") + " s</small>";
+    arEl("arApWhen").textContent = at + " · its 47 h wait ends then, read from Aero's contract";
+  } else {
+    arEl("arApLabel").textContent = "Aero Autopilot";
+    arEl("arApIn").textContent = "Can move now";
+    arEl("arApWhen").textContent = "Its 47 h wait ended " + at + ". Aero moves it shortly; the next time shows here once it does.";
+  }
+}
+
+const arPushOk = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+let arPushPrefs = { autopilot: false, wallet: false };
+try { arPushPrefs = { ...arPushPrefs, ...JSON.parse(localStorage.getItem("arPush") || "{}") }; } catch (e) { /* defaults */ }
+if (arPushOk && Notification.permission !== "granted") arPushPrefs = { autopilot: false, wallet: false };
+const arPushSave = () => { try { localStorage.setItem("arPush", JSON.stringify(arPushPrefs)); } catch (e) { /* this visit only */ } };
+const arPost = (body) => ({ method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+
+// The earliest moment any of the wallet's stakes can move again (0: right away).
+function arWalletReady() {
+  const t = arWallet ? arWallet.stakes.flatMap((s) => Object.values(s.chains).filter((c) => c.last).map((c) => c.readyAt)) : [];
+  return t.length ? Math.min(...t) : 0;
+}
+function arPushWalletShown() {
+  const a = arEl("arAddr").value.trim();
+  arEl("arPushWal").textContent = arWallet ? "(" + a.slice(0, 6) + "…" + a.slice(-4) + ")" : "(look up your wallet below first)";
+}
+function arPushUi(note) {
+  arEl("arPushAp").checked = arPushPrefs.autopilot;
+  arEl("arPushWallet").checked = arPushPrefs.wallet;
+  arEl("arBell").innerHTML = "&#128276; " + (arPushPrefs.autopilot || arPushPrefs.wallet ? "Alerts on" : "Notify me");
+  if (note) arEl("arPushMsg").textContent = note;
+}
+
+async function arPushSync(fromClick) {
+  const reg = await navigator.serviceWorker.register("sw.js");
+  if (!arPushPrefs.autopilot && !arPushPrefs.wallet) {
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) { await fetch(AR_PUSH_API + "unsub", arPost({ endpoint: sub.endpoint })).catch(() => {}); await sub.unsubscribe(); }
+    arPushUi("Alerts are off.");
+    return;
+  }
+  if (Notification.permission !== "granted") {
+    if (!fromClick) return;
+    const answer = await Notification.requestPermission();
+    if (answer !== "granted") {
+      arPushPrefs = { autopilot: false, wallet: false };
+      arPushSave();
+      arPushUi(answer === "denied" ? "Alerts are blocked for this site in your browser's settings." : "Allow alerts when your browser asks, then tick again.");
+      return;
+    }
+  }
+  await navigator.serviceWorker.ready;
+  const key = Uint8Array.from(atob(AR_VAPID.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
+  const sub = (await reg.pushManager.getSubscription()) || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key }));
+  const body = { sub: sub.toJSON(), autopilot: arPushPrefs.autopilot, wallet: arPushPrefs.wallet };
+  if (!arPushPrefs.wallet) body.ready = 0;
+  else if (arWallet) body.ready = arWalletReady();
+  const res = await fetch(AR_PUSH_API + "sub", arPost(body));
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const ready = arWallet ? arWalletReady() : 0;
+  arPushUi(arPushPrefs.wallet && arWallet && ready <= Date.now() / 1000
+    ? "Saved. Your sAERO can already move, so the 47 h alert comes after your next allocation and a new look-up here."
+    : "Saved. Your browser shows the alert even with this tab closed. Turn off any time.");
+}
+
+arEl("arBell").addEventListener("click", () => {
+  arEv("radar_notify");
+  const pop = arEl("arBellPop");
+  pop.hidden = !pop.hidden;
+  arEl("arBell").setAttribute("aria-expanded", String(!pop.hidden));
+});
+document.addEventListener("click", (e) => { if (!e.target.closest(".ar-bell")) { arEl("arBellPop").hidden = true; arEl("arBell").setAttribute("aria-expanded", "false"); } });
+for (const [id, pref] of [["arPushAp", "autopilot"], ["arPushWallet", "wallet"]]) {
+  arEl(id).addEventListener("change", async (e) => {
+    if (pref === "wallet" && e.target.checked && !arWallet) {
+      e.target.checked = false;
+      arPushUi("Look up your wallet below first, then tick this.");
+      return;
+    }
+    arPushPrefs[pref] = e.target.checked;
+    arPushSave();
+    arPushUi("Saving…");
+    try { await arPushSync(true); } catch (err) { arPushUi("Could not turn alerts on (" + err.message + "). Try again in a moment."); }
+  });
+}
+if (!arPushOk) {
+  arEl("arPushAp").disabled = arEl("arPushWallet").disabled = true;
+  arEl("arPushMsg").textContent = "This browser can't show alerts. On iPhone, add the radar to your Home Screen (Share → Add to Home Screen) and open it from there.";
+} else arPushUi();
+
+arReadAutopilot().catch(() => {});
+setInterval(arApTick, 1000);
+// Picks up Autopilot's next allocation without a reload.
+setInterval(() => arReadAutopilot().catch(() => {}), 5 * 60 * 1000);
+arEl("arCopy").addEventListener("click", () => {
+  const amount = Math.max(0, parseFloat(arEl("arAmount").value) || 0);
+  const text = arSteadySplit(amount).split.map((s) => arName(s.g) + " (" + (s.g.kind || "?") + ", " + (AR_CHAIN_NAMES[arChainOf(s.g)] || arChainOf(s.g)) + ") " + Math.round(s.share * 100) + "%").join("\n");
+  navigator.clipboard.writeText(text).then(() => { arEl("arCopy").textContent = "Copied"; setTimeout(() => (arEl("arCopy").textContent = "Copy percentages"), 1500); });
+});
+
+fetch("data/v3.json", { cache: "no-cache" })
+  .then((r) => (r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status))))
+  .then((data) => {
+    if (data.status !== "live" || !data.gauges.length) return;
+    arData = data;
+    const ago = Math.max(0, Math.round((Date.now() - Date.parse(data.checkedAt)) / 3600000));
+    const hours = Math.round(data.windowHours);
+    const nets = new Set(data.gauges.map(arChainOf)).size;
+    arEl("arMeta").innerHTML = '<span class="dot"></span> Live from Aero\'s contracts on ' + (nets > 1 ? nets + " networks" : "Base") +
+      " · updated <strong>" + (ago === 0 ? "under an hour ago" : ago + " h ago") + "</strong> · fees from the last " + hours + " h" +
+      (data.windowHours < 96 ? " (since launch)" : "") + " · rescanned every hour";
+    arRenderChains();
+    if (data.windowHours < 48) arEl("arEarly").textContent = "Aero launched " + hours + " h ago and fees arrive in lumps, so these figures are rough for the first days.";
+    arEl("aeroRadar").hidden = false;
+    arRender();
+    // The section is hidden until the scan loads, so the browser can't jump to #guide on its own.
+    if (location.hash === "#guide") arEl("guide").scrollIntoView();
+    fetch("data/v3-history.json", { cache: "no-cache" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((h) => { if (h) arRenderRecord(h); })
+      .catch(() => {});
+    return fetch("data/top-allocators.json", { cache: "no-cache" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((top) => { arTop = top; arRender(); })
+      .catch(() => {});
+  })
+  .catch(() => {});
+</script>
+<!-- Cloudflare Web Analytics: page views only, no cookies (same site token as deftools.xyz; shows up under host aero.deftools.xyz) --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "d66a3ce27f4e4b47bb1eb31a0e5fa912"}'></script>
+<script src="https://deftools.xyz/support.js"></script>
+</body>
+</html>

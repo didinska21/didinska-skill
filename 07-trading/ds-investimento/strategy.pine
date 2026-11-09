@@ -1,0 +1,50 @@
+/*backtest
+start: 2024-03-18 00:00:00
+end: 2024-04-17 00:00:00
+period: 1h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=4
+strategy("Ds_investimento", overlay=true)
+
+// Parâmetros do RSI
+rsi_length = input(7, title="Período do RSI")
+rsi_overbought = input(70, title="Overbought (RSI)")
+rsi_oversold = input(30, title="Oversold (RSI)")
+
+// Parâmetros do Trailing Stop
+trail_offset = input(0.005, title="Trailing Stop Offset")
+stop_loss_points = input(10, title="Pontos do Stop Loss")
+
+// Porcentagem da banca a ser arriscada por entrada
+risk_percent = input(1, title="Porcentagem de Risco (%)")
+
+// Calcula o tamanho da posição com base na porcentagem de risco, tamanho da banca e pontos de stop loss
+equity = strategy.equity
+risk_amount = (equity * risk_percent) / 100
+lot_size = risk_amount / stop_loss_points
+
+// Calcula o RSI
+rsi_value = rsi(close, rsi_length)
+
+// Condições de entrada e saída
+long_condition = crossunder(rsi_value, rsi_oversold)
+short_condition = crossover(rsi_value, rsi_overbought)
+
+if (long_condition)
+    strategy.entry("Long", strategy.long, 1)
+
+if (short_condition)
+    strategy.entry("Short", strategy.short, 1)
+
+// Calcula o Trailing Stop para saída
+trail_price_long = close * (1 - trail_offset)
+trail_price_short = close * (1 + trail_offset)
+
+// Saída Long/Trailing
+strategy.exit("Exit Long/Trailing", from_entry="Long", trail_offset=trail_offset, trail_price=trail_price_long, stop=stop_loss_points)
+
+// Saída Short/Trailing
+strategy.exit("Exit Short/Trailing", from_entry="Short", trail_offset=trail_offset, trail_price=trail_price_short, stop=stop_loss_points)

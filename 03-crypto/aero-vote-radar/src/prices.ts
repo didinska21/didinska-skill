@@ -1,0 +1,161 @@
+import { DEFILLAMA_PRICE_URL, DEFILLAMA_TIMEOUT_MS, DEFILLAMA_RETRY_COUNT, DEFILLAMA_RETRY_DELAY_MS, PRICE_BATCH_SIZE, PRICE_BATCH_CONCURRENCY, PRICE_CACHE_TTL_MS, PRICE_FAILURE_CACHE_TTL_MS } from "./constants.js";
+import { mapWithConcurrency } from "./util.js";
+
+type DefiLlamaResponse = {
+  coins: Record<string, { price: number; decimals: number; symbol: string }>;
+};
+
+export interface TokenPrice {
+  price: number;
+  decimals: number;
+}
+
+interface CachedPrice extends TokenPrice {
+  cachedAt: number;
+  /**
+   * True for the $0 written when a token came back unpriced or its batch failed
+   * outright. Kept because the two expire on very different clocks — see
+   * PRICE_FAILURE_CACHE_TTL_MS — and because a $0 price is otherwise
+   * indistinguishable from a real one that happens to be zero.
+   */
+  isFallback: boolean;
+}
+
+const cache = new Map<string, CachedPrice>();
+
+function isFresh(entry: CachedPrice | undefined): entry is CachedPrice {
+  if (entry === undefined) return false;
+  const ttl = entry.isFallback ? PRICE_FAILURE_CACHE_TTL_MS : PRICE_CACHE_TTL_MS;
+  return Date.now() - entry.cachedAt < ttl;
+}
+
+/**
+ * Looks up current USD price + decimals for a batch of Base token addresses via
+ * DefiLlama's free, keyless price API. Missing/unpriced tokens (obscure or very
+ * new bribe tokens are common) get price 0 rather than throwing, so one unpriced
+ * token doesn't blow up a whole pool's calculation — it just contributes $0.
+ * That $0 is cached far more briefly than a real price, so a token that failed
+ * to price once isn't stuck at zero for the rest of a long-lived process.
+ * Unlike mcp-server.ts's long-lived process, the CLI is a fresh process per
+ * invocation and never gets that later retry within a single run — so a
+ * batch retries a few times (DEFILLAMA_RETRY_COUNT) before falling back to
+ * $0, the same way the Base RPC client retries a dropped request.
+ *
+ * Requests are chunked into batches of `PRICE_BATCH_SIZE` tokens rather than one
+ * request for the whole (potentially hundreds-long) token list, so a single
+ * oversized/failed request only zeroes out prices for its own batch instead of
+ * every token in the run. Batches are fetched with bounded concurrency rather
+ * than one after another — a run touching a few hundred tokens can produce
+ * several batches, and awaiting them sequentially means a slow or timed-out
+ * batch (up to `DEFILLAMA_TIMEOUT_MS` each) adds its full delay to every batch
+ * behind it instead of overlapping.
+ */
+export async function getTokenPrices(
+  tokenAddresses: string[],
+  // DefiLlama's chain key; Aero (src/v3-cli.ts) prices its other networks here too.
+  chain = "base",
+): Promise<Map<string, TokenPrice>> {
+  // Base keeps the bare address as its cache key; other chains are prefixed so the
+  // same address on two networks never shares a price.
+  const ck = (a: string) => (chain === "base" ? a : `${chain}:${a}`);
+  const unique = [...new Set(tokenAddresses.map((a) => a.toLowerCase()))];
+  const uncached = unique.filter((a) => !isFresh(cache.get(ck(a))));
+
+  const batches: string[][] = [];
+  for (let i = 0; i < uncached.length; i += PRICE_BATCH_SIZE) {
+    batches.push(uncached.slice(i, i + PRICE_BATCH_SIZE));
+  }
+
+  await mapWithConcurrency(batches, PRICE_BATCH_CONCURRENCY, async (batch) => {
+    const keys = batch.map((a) => `${chain}:${a}`).join(",");
+    for (let attempt = 0; attempt <= DEFILLAMA_RETRY_COUNT; attempt++) {
+      try {
+        const res = await fetch(`${DEFILLAMA_PRICE_URL}/${keys}`, { signal: AbortSignal.timeout(DEFILLAMA_TIMEOUT_MS) });
+        if (res.ok) {
+          const data = (await res.json()) as DefiLlamaResponse;
+          for (const [key, coin] of Object.entries(data.coins)) {
+            const address = key.split(":")[1]?.toLowerCase();
+            // DefiLlama occasionally returns a malformed entry (missing `decimals`,
+            // a null/non-numeric `price`) for a thin or newly-listed token — exactly
+            // the kind of obscure bribe token this module expects to meet. Caching
+            // that as-is would store NaN as a "real" price for the full
+            // PRICE_CACHE_TTL_MS, which is worse than the $0 fallback below: every
+            // downstream guard checks `price === 0`, and `NaN === 0` is false, so a
+            // NaN price slips past the `perDay(g) > 0` filter (src/radar.ts)
+            // instead of being excluded. Skipping it here lets the batch's own
+            // post-loop fallback (below) zero it out on the same short failure
+            // TTL as any other unpriced token.
+            if (address && Number.isFinite(coin.price) && coin.price >= 0 && Number.isFinite(coin.decimals)) {
+              cache.set(ck(address), { price: coin.price, decimals: coin.decimals, cachedAt: Date.now(), isFallback: false });
+            }
+          }
+          break;
+        }
+      } catch {
+        // Network-level failure (DNS, timeout, connection refused) — retried the
+        // same as a non-ok response below, then falls through to the same $0
+        // fallback once retries are exhausted, per this function's contract: one
+        // pricing outage shouldn't blow up a whole pool's calculation (and, since
+        // this is per-batch, doesn't take down other batches' pricing).
+      }
+      if (attempt < DEFILLAMA_RETRY_COUNT) await new Promise((resolve) => setTimeout(resolve, DEFILLAMA_RETRY_DELAY_MS));
+    }
+    for (const a of batch) {
+      if (!isFresh(cache.get(ck(a)))) cache.set(ck(a), { price: 0, decimals: 18, cachedAt: Date.now(), isFallback: true });
+    }
+  });
+
+  const result = new Map<string, TokenPrice>();
+  for (const a of unique) {
+    const entry = cache.get(ck(a));
+    result.set(a, entry ? { price: entry.price, decimals: entry.decimals } : { price: 0, decimals: 18 });
+  }
+  return result;
+}
+
+/**
+ * How many of the looked-up tokens ended up with no usable price.
+ *
+ * An unpriced token silently contributes $0 to every epoch it appears in, which
+ * is the right behaviour — one obscure bribe token shouldn't blow up a pool's
+ * whole calculation — but it is not a fact worth hiding. A pool incentivised
+ * entirely in something DefiLlama doesn't cover reads as $0, fails the
+ * `perDay(g) > 0` filter (src/radar.ts), and vanishes from the ranking with
+ * nothing said. Callers
+ * report this the same way they already report skipped pools and failed epoch
+ * fetches, so a thin-looking scan can be recognised as a pricing gap rather
+ * than a quiet market.
+ */
+export function countUnpricedTokens(prices: Map<string, TokenPrice>): number {
+  let unpriced = 0;
+  for (const { price } of prices.values()) if (price === 0) unpriced++;
+  return unpriced;
+}
+
+/** Converts a raw on-chain token amount to a USD value using a looked-up price/decimals map. */
+export function toUsd(amount: bigint, token: string, prices: Map<string, TokenPrice>): number {
+  const info = prices.get(token.toLowerCase());
+  if (!info || info.price === 0) return 0;
+  return (Number(amount) / 10 ** info.decimals) * info.price;
+}
+
+/**
+ * `token`'s own price, falling back to `fallback`'s price only while DefiLlama
+ * has none for `token` itself yet.
+ *
+ * Written for src/v3-cli.ts's new-AERO/old-AERO handling: the new AERO had no
+ * DefiLlama price on Aero's 2026-10-22 launch day and upgrades 1:1 from the old
+ * AERO, so pricing it as the old token was the only option at launch. But that
+ * fallback was wired in unconditionally, with nothing to turn it off again —
+ * and DefiLlama did start pricing the new token directly within two weeks (confirmed
+ * 2026-11-01, both tokens priced independently and no longer identical). Deferring
+ * to the old token forever would have kept every pool's AERO-denominated fees and
+ * incentives priced off a token that is free to diverge from the one actually paid,
+ * instead of switching back to AERO's own live price the moment DefiLlama has one.
+ */
+export function priceOrFallback(prices: ReadonlyMap<string, TokenPrice>, token: string, fallback: string): TokenPrice | undefined {
+  const direct = prices.get(token);
+  if (direct && direct.price > 0) return direct;
+  const fb = prices.get(fallback);
+  return fb && fb.price > 0 ? fb : undefined;
+}

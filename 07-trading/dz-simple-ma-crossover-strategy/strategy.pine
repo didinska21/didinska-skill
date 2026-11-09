@@ -1,0 +1,52 @@
+/*backtest
+start: 2025-01-01 00:00:00
+end: 2025-03-24 00:00:00
+period: 2d
+basePeriod: 2d
+exchanges: [{"eid":"Futures_Binance","currency":"ETH_USDT"}]
+*/
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//@version=6
+//
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// @author = Da_mENIZ
+// © denis_zvegelj
+// last change	20.Mar.2025
+//
+// Simple MA Crossover strategy that shows on the chart with Long/Short indicators. Feel free to use it to suit 
+// your needs
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+strategy("DZ Simple MA Crossover Strategy", shorttitle="DZ_MACross", overlay=true, calc_on_every_tick=true)
+
+// Define the moving average lengths
+i_src_price = input.source  (open, "Price source",                                                                                                                     group="Main Settings")
+i_shMA_len  = input.int		(9, 	"Short MA Length", 		minval=1,																									group="Main Settings")
+i_loMA_len  = input.int		(21,	"Long MA Length", 		minval=6,																									group="Main Settings")
+
+// Calculate the moving averages
+short_MA = ta.sma(i_src_price, i_shMA_len)
+long_MA = ta.sma(i_src_price, i_loMA_len)
+
+// Plot the moving averages on the chart
+plot(short_MA, color=color.red, linewidth=2, title="Short MA")
+plot(long_MA, color=color.blue, linewidth=2, title="Long MA")
+
+// Generate the buy and sell signals
+long_Cond = ta.crossover(short_MA, long_MA)
+short_Cond = ta.crossunder(short_MA, long_MA)
+
+// Place the orders based on conditions
+if (long_Cond)
+    strategy.close("Short", immediately = true, comment = "Close")
+    strategy.entry("Long", strategy.long, comment = "Enter")
+    label.new(bar_index+1, open, "Long\n" + str.tostring(open), style=label.style_label_down, color=color.blue, textcolor=color.white, yloc=yloc.abovebar)
+
+
+
+if (short_Cond)
+    strategy.close("Long", immediately = true, comment = "Close")
+//    strategy.entry("Short", strategy.short, comment = "Short\n" + str.tostring(open))
+    strategy.entry("Short", strategy.short, comment = "Enter")
+    label.new(bar_index+1, open, "Short\n" + str.tostring(open), style=label.style_label_up, color=color.red, textcolor=color.white, yloc=yloc.belowbar)

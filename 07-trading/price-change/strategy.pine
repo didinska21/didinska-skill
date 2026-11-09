@@ -1,0 +1,41 @@
+/*backtest
+start: 2023-04-01 00:00:00
+end: 2024-03-31 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=4
+strategy("Price Change", shorttitle="Price Change", overlay=true)
+
+change = input(00.1, title="Change", minval=0.0001, maxval=1, type=input.float)
+
+
+// Calculate price change
+priceChange = close / close[1] - 1
+
+// Buy and Sell Signals
+buyp = priceChange >= change
+sellp = priceChange <= (change * -1)
+
+// Initialize position and track the current position
+var int position = na
+
+// Strategy entry conditions
+buy_condition = buyp and (na(position) or position == -1)
+sell_condition = sellp and (na(position) or position == 1)
+
+var float stop = na
+
+if (buy_condition)
+    strategy.entry("Long", strategy.long)
+    stop := lowest(low, 6)
+    position := 1
+if (sell_condition or low < stop)
+    strategy.close("Long")
+    position := -1
+
+// Plot Buy and Sell signals using plotshape
+plotshape(series=buy_condition, title="Buy Signal", location=location.belowbar, color=color.green, style=shape.triangleup, size=size.small)
+plotshape(series=sell_condition, title="Sell Signal", location=location.abovebar, color=color.red, style=shape.triangledown, size=size.small)

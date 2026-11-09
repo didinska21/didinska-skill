@@ -1,0 +1,56 @@
+/*backtest
+start: 2024-02-25 00:00:00
+end: 2025-02-22 08:00:00
+period: 1h
+basePeriod: 1h
+exchanges: [{"eid":"Binance","currency":"SOL_USDT"}]
+*/
+
+//@version=5
+strategy("PSAR & RSI Strategy with Risk Management", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// User Inputs
+psar_start = input.float(0.02, title="PSAR Start")
+psar_increment = input.float(0.02, title="PSAR Increment")
+psar_max = input.float(0.2, title="PSAR Max")
+rsi_length = input.int(14, title="RSI Length")
+rsi_overbought = input.int(70, title="RSI Overbought Level")
+rsi_oversold = input.int(30, title="RSI Oversold Level")
+
+tp_percent = input.float(5, title="Take Profit %") / 100  // Take Profit Level
+sl_percent = input.float(3, title="Stop Loss %") / 100    // Stop Loss Level
+
+// PSAR Calculation
+psar = ta.sar(psar_start, psar_increment, psar_max)
+
+// RSI Calculation
+rsi = ta.rsi(close, rsi_length)
+
+// Buy & Sell Conditions
+buy_signal = ta.crossover(close, psar) and rsi < rsi_oversold
+sell_signal = ta.crossunder(close, psar) and rsi > rsi_overbought
+
+// Plot PSAR on Chart
+plot(psar, style=plot.style_cross, color=color.blue, title="PSAR")
+
+// Buy & Sell Signals on Chart
+plotshape(series=buy_signal, location=location.belowbar, color=color.green, style=shape.labelup, title="BUY Signal")
+plotshape(series=sell_signal, location=location.abovebar, color=color.red, style=shape.labeldown, title="SELL Signal")
+
+// RSI Visualization (Dynamic Colors)
+rsi_color = rsi > rsi_overbought ? color.red : rsi < rsi_oversold ? color.green : color.blue
+plot(rsi, title="RSI", color=rsi_color, linewidth=2)
+hline(rsi_overbought, "Overbought", color=color.red)
+hline(rsi_oversold, "Oversold", color=color.green)
+
+// Alerts for Buy & Sell
+alertcondition(buy_signal, title="BUY Alert", message="Buy Signal Triggered!")
+alertcondition(sell_signal, title="SELL Alert", message="Sell Signal Triggered!")
+
+// Strategy Execution with Take Profit & Stop Loss
+if buy_signal
+    strategy.entry("Buy", strategy.long)
+    strategy.exit("Take Profit / Stop Loss", from_entry="Buy", limit=close * (1 + tp_percent), stop=close * (1 - sl_percent))
+
+if sell_signal
+    strategy.close("Buy")

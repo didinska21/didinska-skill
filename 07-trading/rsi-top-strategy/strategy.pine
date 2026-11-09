@@ -1,0 +1,52 @@
+/*backtest
+start: 2024-12-17 00:00:00
+end: 2025-01-16 00:00:00
+period: 3h
+basePeriod: 3h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT","balance":49999}]
+*/
+
+//@version=5
+strategy("RSI Top Strategy", overlay=true, pyramiding=2)
+
+qty1 = input( 1 , "Qty first entry", group="Strategy settings")
+qty2 = input( 1 , "Qty second entry", group="Strategy settings")
+avg1 = input.float( 1.5 , "% averaging ", group="Strategy settings")
+
+overSold = input( 30 , group="open RSI Settings")
+overBought = input( 70 , group="open RSI Settings")
+rsi1len = input.int(14, minval=1, title="open RSI Length", group="open RSI Settings")
+
+overSold2 = input( 30 , group="close RSI Settings")
+overBought2 = input( 70 , group="close RSI Settings")
+rsi2len = input.int(30, minval=1, title="close RSI Length", group="close RSI Settings")
+
+price = close
+vrsi = ta.rsi(price, rsi1len)
+vrsi2 = ta.rsi(price, rsi2len)
+
+sz=strategy.position_size	
+
+co = ta.crossover(vrsi, overSold)
+cu = ta.crossunder(vrsi, overBought)
+if (not na(vrsi))
+	if (co) and not (sz>0)
+		strategy.entry("Long", strategy.long, qty = qty1, comment="Long")
+		Avgl=close-close*0.01*avg1
+		strategy.entry("AvgL", strategy.long, qty = qty2, limit=Avgl, comment="AvgL")
+	if (cu) and not (sz<0)
+		strategy.entry("Short", strategy.short, qty = qty1, comment="Short")
+		Avgs=close+close*0.01*avg1
+		strategy.entry("AvgS", strategy.short, qty = qty2, limit=Avgs, comment="AvgS")
+//plot(strategy.equity, title="equity", color=color.red, linewidth=2, style=plot.style_areabr)
+
+if sz[1]<0 and sz<0 and vrsi2<overBought2 and vrsi2[1]>=overBought2
+    strategy.close_all("x")
+if sz[1]>0 and sz>0 and vrsi2>overSold2  and vrsi2[1]<=overSold2 
+    strategy.close_all("x")
+    
+plot(vrsi,'open rsi',color=color.green)        
+plot(vrsi2,'close rsi',color=color.red)    
+
+hline(overBought, "RSI Upper Band", color=#787B86)
+hline(overSold, "RSI Upper Band", color=#787B86)

@@ -1,0 +1,55 @@
+/*backtest
+start: 2023-11-24 00:00:00
+end: 2023-12-24 00:00:00
+period: 1h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=3
+strategy("Keltner Channel Strategy", overlay=true)
+source = close
+
+useTrueRange = input(true)
+length = input(20, minval=1)
+mult = input(1.0)
+
+ma = sma(source, length)
+range = useTrueRange ? tr : high - low
+rangema = sma(range, length)
+upper = ma + rangema * mult
+lower = ma - rangema * mult
+
+crossUpper = crossover(source, upper)
+crossLower = crossunder(source, lower)
+
+bprice = 0.0
+bprice := crossUpper ? high+syminfo.mintick : nz(bprice[1])
+
+sprice = 0.0
+sprice := crossLower ? low -syminfo.mintick : nz(sprice[1]) 
+
+crossBcond = false
+crossBcond := crossUpper ? true 
+ : na(crossBcond[1]) ? false : crossBcond[1]
+
+crossScond = false
+crossScond := crossLower ? true 
+ : na(crossScond[1]) ? false : crossScond[1]
+
+cancelBcond = crossBcond and (source < ma or high >= bprice )
+cancelScond = crossScond and (source > ma or low <= sprice )
+
+if (cancelBcond)
+    strategy.cancel("KltChLE")
+
+if (crossUpper)
+    strategy.entry("KltChLE", strategy.long, stop=bprice, comment="KltChLE")
+
+if (cancelScond)
+    strategy.cancel("KltChSE")
+
+if (crossLower)
+    strategy.entry("KltChSE", strategy.short, stop=sprice, comment="KltChSE")
+
+//plot(strategy.equity, title="equity", color=red, linewidth=2, style=areabr)

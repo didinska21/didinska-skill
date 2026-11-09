@@ -1,0 +1,48 @@
+/*backtest
+start: 2019-12-23 08:00:00
+end: 2024-12-11 08:00:00
+period: 1d
+basePeriod: 1d
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("EMA Crossover Strategy", overlay=true)
+
+// Input for EMAs
+shortEmaLength = input(14, title="Short EMA Length")
+longEmaLength = input(100, title="Long EMA Length")
+
+// Calculate EMAs
+shortEma = ta.ema(close, shortEmaLength)
+longEma = ta.ema(close, longEmaLength)
+
+// Plot EMAs
+plot(shortEma, color=color.blue, title="9 EMA")
+plot(longEma, color=color.red, title="100 EMA")
+
+// Historical Signal Tracking
+var float lastBuyPrice = na
+var float lastSellPrice = na
+
+// Buy and Sell Signals
+buySignal = ta.crossover(shortEma, longEma)
+sellSignal = ta.crossunder(shortEma, longEma)
+
+// Track last buy and sell prices
+if (buySignal)
+    lastBuyPrice := close
+
+if (sellSignal)
+    lastSellPrice := close
+
+// Plot buy and sell signals on the chart
+plotshape(buySignal, title="Buy Signal", location=location.belowbar, color=color.green, style=shape.labelup, text="BUY")
+plotshape(sellSignal, title="Sell Signal", location=location.abovebar, color=color.red, style=shape.labeldown, text="SELL")
+
+// Strategy Logic
+if (buySignal)
+    strategy.entry("Buy", strategy.long)
+
+if (sellSignal)
+    strategy.close("Buy")

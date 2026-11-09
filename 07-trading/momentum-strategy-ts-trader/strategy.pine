@@ -1,0 +1,45 @@
+/*backtest
+start: 2024-01-09 00:00:00
+end: 2024-01-16 00:00:00
+period: 2h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("Momentum Strategy [TS Trader]", overlay=true)
+
+confirmBars = input(1)
+momentumLength = input(14, title="Momentum Length")
+
+price = close
+momentum = close - close[momentumLength]
+
+// === INPUT BACKTEST RANGE ===
+fromYear = input.int(2019, title="Backtest Start Year")
+fromMonth = input.int(1, title="Backtest Start Month", minval=1, maxval=12)
+fromDay = input.int(1, title="Backtest Start Day", minval=1, maxval=31)
+toYear = input.int(2023, title="Backtest End Year")
+toMonth = input.int(12, title="Backtest End Month", minval=1, maxval=12)
+toDay = input.int(31, title="Backtest End Day", minval=1, maxval=31)
+
+startTimestamp = timestamp(fromYear, fromMonth, fromDay, 00, 00)
+endTimestamp = timestamp(toYear, toMonth, toDay, 23, 59)
+
+inBacktestRange = true
+
+// === STRATEGY LOGIC ===
+bcond = momentum > 0
+bcount = 0
+bcount := bcond ? nz(bcount[1]) + 1 : 0
+if (bcount == confirmBars and inBacktestRange)
+    strategy.entry("Buy", strategy.long, comment="Long")
+
+scond = momentum < 0
+scount = 0
+scount := scond ? nz(scount[1]) + 1 : 0
+if (scount == confirmBars and inBacktestRange)
+    strategy.entry("Sell", strategy.short, comment="Short")
+
+// Plotting Momentum
+plot(momentum, title="Momentum", color=color.purple)

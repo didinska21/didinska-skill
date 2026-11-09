@@ -1,0 +1,63 @@
+/*backtest
+start: 2024-12-29 00:00:00
+end: 2025-01-05 00:00:00
+period: 5m
+basePeriod: 5m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+// TradingView Pine Script for RSI & CCI-Based Strategy
+//@version=6
+strategy("RSI & CCI Strategy", overlay=true)
+
+// User Inputs
+rsiLength = input.int(14, title="RSI Length")
+rsiOverbought = input.int(80, title="RSI Overbought Level")
+rsiOversold = input.int(20, title="RSI Oversold Level")
+
+cciLength = input.int(20, title="CCI Length")
+cciOverbought = input.int(200, title="CCI Overbought Level")
+cciOversold = input.int(-200, title="CCI Oversold Level")
+
+riskRewardRatio = input.float(2.0, title="Risk-Reward Ratio")
+fixedStopLoss = input.float(1.0, title="Fixed Stop Loss (Percentage)", minval=0.1)
+
+// RSI and CCI Calculations
+rsi = ta.rsi(close, rsiLength)
+cci = ta.cci(close, cciLength)
+
+// Entry Conditions
+longCondition = (rsi < rsiOversold) and (cci < cciOversold)
+shortCondition = (rsi > rsiOverbought) and (cci > cciOverbought)
+
+// Initialize variables for stop loss and take profit
+var float longStopLoss = na
+var float longTakeProfit = na
+var float shortStopLoss = na
+var float shortTakeProfit = na
+
+// Plot Buy and Sell Signals
+if (longCondition)
+    label.new(bar_index, low, "BUY", style=label.style_label_up, color=color.green, textcolor=color.white)
+    longEntryPrice = close
+    longStopLoss := longEntryPrice * (1 - fixedStopLoss / 100)
+    longTakeProfit := longEntryPrice + (longEntryPrice - longStopLoss) * riskRewardRatio
+    // line.new(bar_index, longEntryPrice, bar_index, longStopLoss, color=color.red, width=1, extend=extend.none)
+    // line.new(bar_index, longEntryPrice, bar_index, longTakeProfit, color=color.green, width=1, extend=extend.none)
+
+if (shortCondition)
+    label.new(bar_index, high, "SELL", style=label.style_label_down, color=color.red, textcolor=color.white)
+    shortEntryPrice = close
+    shortStopLoss := shortEntryPrice * (1 + fixedStopLoss / 100)
+    shortTakeProfit := shortEntryPrice - (shortStopLoss - shortEntryPrice) * riskRewardRatio
+    // line.new(bar_index, shortEntryPrice, bar_index, shortStopLoss, color=color.green, width=1, extend=extend.none)
+    // line.new(bar_index, shortEntryPrice, bar_index, shortTakeProfit, color=color.red, width=1, extend=extend.none)
+
+// Strategy Information and Alerts
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+    strategy.exit("Take Profit/Stop Loss", from_entry="Long", limit=longTakeProfit, stop=longStopLoss)
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+    strategy.exit("Take Profit/Stop Loss", from_entry="Short", limit=shortTakeProfit, stop=shortStopLoss)

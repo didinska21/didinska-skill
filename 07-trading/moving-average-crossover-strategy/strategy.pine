@@ -1,0 +1,38 @@
+/*backtest
+start: 2023-12-31 00:00:00
+end: 2024-01-07 00:00:00
+period: 5m
+basePeriod: 1m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("Moving Average Crossover Strategy", overlay=true)
+
+// Input parameters
+fastLength = input(10, title="Fast MA Length")
+slowLength = input(21, title="Slow MA Length")
+stopLossPercent = input(1, title="Stop Loss Percentage")
+
+// Calculate moving averages
+fastMA = ta.sma(close, fastLength)
+slowMA = ta.sma(close, slowLength)
+
+// Plot the moving averages on the chart
+plot(fastMA, color=color.blue, title="Fast MA")
+plot(slowMA, color=color.red, title="Slow MA")
+
+// Define trading signals
+longCondition = ta.crossover(fastMA, slowMA)
+shortCondition = ta.crossunder(fastMA, slowMA)
+
+// Execute trades
+strategy.entry("Long", strategy.long, when=longCondition)
+strategy.entry("Short", strategy.short, when=shortCondition)
+
+// Implement stop loss
+strategy.exit("Stop Loss/Profit", from_entry="Long", loss=close * stopLossPercent / 100, profit=close * 2)
+
+// Plot buy and sell signals on the chart
+plotshape(series=longCondition, title="Buy Signal", color=color.green, style=shape.labelup, location=location.belowbar)
+plotshape(series=shortCondition, title="Sell Signal", color=color.red, style=shape.labeldown, location=location.abovebar)

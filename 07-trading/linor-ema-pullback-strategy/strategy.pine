@@ -1,0 +1,42 @@
+/*backtest
+start: 2023-02-11 00:00:00
+end: 2024-02-17 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("LinoR EMA Pullback Strategy", shorttitle="EPS", overlay=true)
+
+// Define EMA period
+emaPeriod = input(50, title="EMA Period")
+
+// Calculate 50 EMA
+ema50 = ta.ema(close, emaPeriod)
+
+// Calculate engulfing conditions
+engulfingBullish = close[1] < open[1] and close > open and close > close[1] and open < open[1]
+engulfingBearish = close[1] > open[1] and open > close and open > open[1] and close < close[1]
+
+// Define a 1-minute timer
+var timer = 0
+if bar_index > 0
+    timer := timer[1] + 1
+
+// Long condition
+longCondition = ta.crossover(close, ema50) and engulfingBullish
+if longCondition
+    strategy.entry("Buy", strategy.long)
+
+// Short condition
+shortCondition = ta.crossunder(close, ema50) and engulfingBearish
+if shortCondition
+    strategy.entry("Sell", strategy.short)
+
+// Exit after 1 minute
+if timer >= 1
+    strategy.close("Exit")
+
+plotshape(series=longCondition, title="Long Signal", location=location.belowbar, color=color.green, style=shape.triangleup, size=size.small)
+plotshape(series=shortCondition, title="Short Signal", location=location.abovebar, color=color.red, style=shape.triangledown, size=size.small)

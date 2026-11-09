@@ -1,0 +1,47 @@
+/*backtest
+start: 2024-01-06 00:00:00
+end: 2024-02-05 00:00:00
+period: 2h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=4
+strategy("Improved Moving Average Crossover", overlay=true)
+
+// Input parameters
+fastLength = input(10, title="Fast MA Length")
+slowLength = input(20, title="Slow MA Length")
+riskPercentage = input(1, title="Risk Percentage", minval=0.1, maxval=5, step=0.1)
+
+// Calculate moving averages
+fastMA = sma(close, fastLength)
+slowMA = sma(close, slowLength)
+
+// Plot moving averages on the chart
+plot(fastMA, color=color.blue, title="Fast MA")
+plot(slowMA, color=color.red, title="Slow MA")
+
+// Trading signals
+longCondition = crossover(fastMA, slowMA)
+shortCondition = crossunder(fastMA, slowMA)
+
+// Position sizing based on percentage risk
+riskPerTrade = input(2, title="Risk Per Trade (%)", minval=1, maxval=10, step=0.5)
+equity = strategy.equity
+
+lotSize = (equity * riskPercentage) / (riskPerTrade * 100)
+
+strategy.entry("Buy", strategy.long, when=longCondition)
+strategy.close("Buy", when=shortCondition)
+
+strategy.entry("Sell", strategy.short, when=shortCondition)
+strategy.close("Sell", when=longCondition)
+
+// Plot trades on the chart using plotshape
+plotshape(series=longCondition, color=color.green, style=shape.triangleup, location=location.belowbar, size=size.small, title="Buy Signal")
+plotshape(series=shortCondition, color=color.red, style=shape.triangledown, location=location.abovebar, size=size.small, title="Sell Signal")
+
+// Alerts
+alertcondition(longCondition, title="Buy Signal", message="Buy Signal!")
+alertcondition(shortCondition, title="Sell Signal", message="Sell Signal!")

@@ -1,0 +1,48 @@
+/*backtest
+start: 2024-01-04 00:00:00
+end: 2024-01-11 00:00:00
+period: 1m
+basePeriod: 1m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("Simple Moving Averages", overlay=true)
+
+sma50 = ta.sma(close, 50)
+sma200 = ta.sma(close, 200)
+vwap = ta.vwap(close)
+rsi = ta.rsi(close, 14)
+[diPlus, diMinus, adx_val] = ta.dmi(14, 14)
+atr_val = ta.atr(14)
+
+plot(sma50, color=color.new(color.green, 0))
+plot(sma200, color=color.new(color.red, 0))
+plot(vwap)
+
+longCondition = ta.crossover(sma50, sma200) and vwap > close
+shortCondition = ta.crossunder(sma50, sma200) and vwap < close
+
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+    
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+
+barcolor = sma50 > sma200 ? (vwap < close ? (rsi < 70 ? color.green : color.blue) : color.yellow) : (sma50 < sma200 ? (vwap > close ? (rsi > 30 ? color.red : color.orange) : color.yellow) : na)
+barcolor(barcolor)
+bgcolor(adx_val > 25 and atr_val > 1.18 ? color.new(color.gray, 50) : color.new(color.black, 50), transp=90)
+
+// ADX and ATR Label Box
+// label.new(bar_index, high, "ADX: " + str.tostring(adx_val, "#.##") + "\nATR: " + str.tostring(atr_val, "#.##"), color=color.new(color.white, 0), textcolor=color.new(color.black, 0), style=label.style_labeldown, yloc=yloc.price, xloc=xloc.bar_index, size=size.small, textalign=text.align_left)
+
+// Exit conditions (optional)
+strategy.close("Long", when = ta.crossunder(sma50, sma200))
+strategy.close("Short", when = ta.crossover(sma50, sma200))
+
+// Take Profit and Stop Loss
+takeProfitPercentage = 5
+stopLossPercentage = 3
+
+strategy.exit("Take Profit / Stop Loss", "Long", profit = takeProfitPercentage, loss = stopLossPercentage)
+strategy.exit("Take Profit / Stop Loss", "Short", profit = takeProfitPercentage, loss = stopLossPercentage)

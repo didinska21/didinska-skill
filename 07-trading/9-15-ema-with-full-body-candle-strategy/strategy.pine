@@ -1,0 +1,51 @@
+/*backtest
+start: 2024-10-25 00:00:00
+end: 2024-11-24 00:00:00
+period: 2h
+basePeriod: 2h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("9 & 15 EMA with Full Body Candle Strategy", overlay=true)
+
+// Input parameters for EMAs
+ema9Length = input.int(9, title="9-period EMA")
+ema15Length = input.int(15, title="15-period EMA")
+
+// Calculate the 9-period and 15-period EMAs
+ema9 = ta.ema(close, ema9Length)
+ema15 = ta.ema(close, ema15Length)
+
+// Define full body (marubozu) candle conditions
+fullBodyBullishCandle = (close > open) and (close - open >= (high - low) * 0.75)
+fullBodyBearishCandle = (close < open) and (open - close >= (high - low) * 0.75)
+
+// Buy condition: Full body candle closes above both EMAs
+buySignal = fullBodyBullishCandle and close > ema9 and close > ema15
+
+// Sell condition: Full body candle closes below both EMAs
+sellSignal = fullBodyBearishCandle and close < ema9 and close < ema15
+
+// Plot the EMAs on the chart
+plot(ema9, color=color.blue, linewidth=2, title="9-period EMA")
+plot(ema15, color=color.orange, linewidth=2, title="15-period EMA")
+
+// Plot buy and sell signals
+plotshape(series=buySignal, title="Buy Signal", location=location.belowbar, color=color.green, style=shape.labelup, text="BUY", size=size.small)
+plotshape(series=sellSignal, title="Sell Signal", location=location.abovebar, color=color.red, style=shape.labeldown, text="SELL", size=size.small)
+
+// Execute buy and sell strategy
+if (buySignal)
+    strategy.entry("Buy", strategy.long)
+
+if (sellSignal)
+    strategy.entry("Sell", strategy.short)
+
+// Close buy position on sell signal
+if (sellSignal)
+    strategy.close("Buy")
+
+// Close sell position on buy signal
+if (buySignal)
+    strategy.close("Sell")

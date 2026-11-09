@@ -1,0 +1,59 @@
+/*backtest
+start: 2024-02-19 00:00:00
+end: 2025-02-16 08:00:00
+period: 4h
+basePeriod: 4h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("EMA + MACD + RSI Strategy", overlay=true)
+
+// Parametreler
+length5 = 5
+length14 = 14
+length34 = 34
+length55 = 55
+rsiLength = 14
+macdShort = 12
+macdLong = 26
+macdSignal = 9
+
+// EMA Hesaplamaları
+ema5 = ta.ema(close, length5)
+ema14 = ta.ema(close, length14)
+ema34 = ta.ema(close, length34)
+ema55 = ta.ema(close, length55)
+
+// RSI Hesaplaması
+rsi = ta.rsi(close, rsiLength)
+
+// MACD Hesaplaması
+[macdLine, signalLine, _] = ta.macd(close, macdShort, macdLong, macdSignal)
+macdZeroCross = ta.crossover(macdLine, 0) or ta.crossunder(macdLine, 0)
+
+// Alış ve Satış Koşulları
+longCondition = ema5 > ema14 and ema14 > ema34 and ema34 > ema55 and macdZeroCross and rsi > 50
+shortCondition = ema5 < ema14 and ema14 < ema34 and ema34 < ema55 and macdZeroCross and rsi < 50
+
+// Plotlar
+plot(ema5, color=color.blue, linewidth=1)
+plot(ema14, color=color.green, linewidth=1)
+plot(ema34, color=color.red, linewidth=1)
+plot(ema55, color=color.orange, linewidth=1)
+plot(rsi, title="RSI", color=color.purple, linewidth=1, style=plot.style_line)
+
+// Alış ve Satış Sinyalleri
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+
+// Stop-loss ve Take-profit hesaplamaları
+stopLoss = ema34
+takeProfit = stopLoss * 3
+
+// Stop-loss ve Take-profit Stratejisi
+strategy.exit("Exit Long", from_entry="Long", stop=stopLoss, limit=takeProfit)
+strategy.exit("Exit Short", from_entry="Short", stop=stopLoss, limit=takeProfit)

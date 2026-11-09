@@ -1,0 +1,53 @@
+/*backtest
+start: 2023-05-17 00:00:00
+end: 2024-05-22 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=5
+strategy("SMK ULTRA TREND STRATEGY", overlay=true)
+
+// Define the length for EMAs
+ema5_length = 5
+ema20_length = 20
+
+// Calculate EMAs
+ema5 = ta.ema(close, ema5_length)
+ema20 = ta.ema(close, ema20_length)
+
+// Plot EMAs
+plot(ema5, title="EMA 5", color=color.red )
+plot(ema20, title="EMA 20", color=color.blue)
+
+// Generate buy and sell signals
+buySignal = ta.crossover(ema5, ema20)
+sellSignal = ta.crossunder(ema5, ema20)
+
+// Plot buy and sell signals
+plotshape(series=buySignal, location=location.belowbar, color=color.green, style=shape.labelup, text="BUY")
+plotshape(series=sellSignal, location=location.abovebar, color=color.red, style=shape.labeldown, text="SELL")
+
+// Execute buy and sell orders
+if (buySignal)
+    strategy.entry("Buy", strategy.long)
+if (sellSignal)
+    strategy.close("sell")
+
+// Define support and resistance lengths
+pivotLen = 5
+
+// Calculate support and resistance levels
+var float supportLevel = na
+var float resistanceLevel = na
+
+if (ta.pivotlow(low, pivotLen, pivotLen))
+    supportLevel := low[pivotLen]
+
+if (ta.pivothigh(high, pivotLen, pivotLen))
+    resistanceLevel := high[pivotLen]
+
+// Plot support and resistance levels
+plot(supportLevel, title="Support Level", color=color.green, linewidth=2, style=plot.style_linebr)
+plot(resistanceLevel, title="Resistance Level", color=color.red, linewidth=2, style=plot.style_linebr)

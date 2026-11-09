@@ -1,0 +1,51 @@
+/*backtest
+start: 2024-04-11 00:00:00
+end: 2025-02-19 08:00:00
+period: 1h
+basePeriod: 1h
+exchanges: [{"eid":"Binance","currency":"ETH_USDT"}]
+*/
+
+//@version=5
+strategy("Supertrend + RSI Strategy", overlay=true)
+
+// Input Parameters
+atrLength = input.int(10, title="ATR Length", minval=1)
+factor = input.float(3.0, title="Supertrend Factor", step=0.1)
+rsiLength = input.int(14, title="RSI Length", minval=1)
+rsiOverbought = input.int(70, title="RSI Overbought Level")
+rsiOversold = input.int(30, title="RSI Oversold Level")
+
+// Supertrend Calculation
+atr = ta.atr(atrLength)
+upperBand = ta.sma(close, atrLength) + (factor * atr)
+lowerBand = ta.sma(close, atrLength) - (factor * atr)
+supertrend = 0.0
+supertrend := close > nz(supertrend[1], close) ? lowerBand : upperBand
+supertrendSignal = close > supertrend ? "Buy" : "Sell"
+
+// RSI Calculation
+rsi = ta.rsi(close, rsiLength)
+
+// Trading Logic
+longCondition = (supertrendSignal == "Buy") and (rsi > rsiOversold)
+shortCondition = (supertrendSignal == "Sell") and (rsi < rsiOverbought)
+
+// Entry and Exit Conditions
+if longCondition
+    strategy.entry("Long", strategy.long)
+
+if shortCondition
+    strategy.entry("Short", strategy.short)
+
+// Plot Supertrend
+plot(supertrend, title="Supertrend", color=color.new(color.blue, 0), linewidth=2, style=plot.style_line)
+
+// Plot RSI Levels
+hline(rsiOverbought, "Overbought", color=color.red)
+hline(rsiOversold, "Oversold", color=color.green)
+plot(rsi, title="RSI", color=color.orange, style=plot.style_stepline)
+
+// Alerts
+alertcondition(longCondition, title="Buy Alert", message="Supertrend + RSI Buy Signal")
+alertcondition(shortCondition, title="Sell Alert", message="Supertrend + RSI Sell Signal")

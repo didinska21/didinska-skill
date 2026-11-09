@@ -1,0 +1,43 @@
+/*backtest
+start: 2024-05-01 00:00:00
+end: 2024-05-31 23:59:59
+period: 1h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © satrusskumar
+
+//@version=5
+
+// Input parameters
+length = input.int(21, title="EMA Length")
+mult = input.float(2, title="ATR Multiplier")
+atrLength = input.int(13, title="ATR Length")
+
+// Calculate Keltner Channels
+ema = ta.ema(close, length)
+atr = ta.atr(atrLength)
+upper_band = ema + mult * atr
+lower_band = ema - mult * atr
+
+// Plot Keltner Channels
+plot(upper_band, color=color.red, title="Keltner Upper Band")
+plot(ema, color=color.blue, title="Keltner EMA")
+plot(lower_band, color=color.green, title="Keltner Lower Band")
+
+// Strategy logic
+var float entry_price = na
+var bool in_trade = false
+
+if (not in_trade and close < lower_band)
+    strategy.entry("Long", strategy.long)
+    entry_price := close
+    in_trade := true
+
+if (in_trade and open > upper_band)
+    strategy.close("Long")
+    in_trade := false
+// Strategy settings
+strategy("Keltner Channel Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)

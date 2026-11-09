@@ -1,0 +1,48 @@
+/*backtest
+start: 2024-01-21 00:00:00
+end: 2024-02-20 00:00:00
+period: 1h
+basePeriod: 15m
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=4
+strategy("Reversal Patterns, EMA Crossover, and Bollinger Bands", shorttitle="RP-EMABB", overlay=true)
+
+// Input parameters
+emaShortPeriod = input(50, title="Short EMA Period", minval=1)
+emaLongPeriod = input(200, title="Long EMA Period", minval=1)
+bbLength = input(20, title="Bollinger Bands Length", minval=1)
+bbMultiplier = input(2.0, title="Bollinger Bands Multiplier", minval=0.1, maxval=5.0)
+
+// Calculate EMAs
+emaShort = ema(close, emaShortPeriod)
+emaLong = ema(close, emaLongPeriod)
+
+// Calculate Bollinger Bands
+bbUpper = sma(close, bbLength) + bbMultiplier * stdev(close, bbLength)
+bbLower = sma(close, bbLength) - bbMultiplier * stdev(close, bbLength)
+
+// EMA Crossover and Crossunder
+emaCrossover = crossover(emaShort, emaLong)
+emaCrossunder = crossunder(emaShort, emaLong)
+
+// Bollinger Bands Crossing
+bbUpperCross = crossover(close, bbUpper)
+bbLowerCross = crossunder(close, bbLower)
+
+// Buy and Sell signals
+strategy.entry("Buy", strategy.long, when=emaCrossover or bbLowerCross)
+strategy.entry("Sell", strategy.short, when=emaCrossunder or bbUpperCross)
+
+// Plot EMAs on the chart
+plot(emaShort, color=color.blue, title="50 EMA")
+plot(emaLong, color=color.red, title="200 EMA")
+
+// Plot Bollinger Bands
+plot(bbUpper, color=color.green, title="Bollinger Bands Upper")
+plot(bbLower, color=color.red, title="Bollinger Bands Lower")
+
+// Highlight Buy and Sell signals on the chart
+bgcolor(emaCrossover or bbLowerCross ? color.green : na, transp=90)
+bgcolor(emaCrossunder or bbUpperCross ? color.red : na, transp=90)

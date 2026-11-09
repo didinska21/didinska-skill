@@ -1,0 +1,36 @@
+/*backtest
+start: 2022-09-11 00:00:00
+end: 2023-04-14 00:00:00
+period: 1d
+basePeriod: 1h
+exchanges: [{"eid":"Futures_Binance","currency":"BTC_USDT"}]
+*/
+
+//@version=4
+// strategy(title="Random entry points",overlay=true, default_qty_type=strategy.cash, default_qty_value=500, currency="USD", initial_capital = 1000, commission_type=strategy.commission.percent, commission_value=0.07)
+
+i = input(defval = 6, title = 'Random integer', type = input.integer)
+stop_loss = input(defval = -5, title = 'Stop loss', type = input.integer)
+take_profit = input(defval = 15, title = 'Take profit', type = input.integer)
+
+random = volume % i
+trade_area = float(i) / 2
+
+var profit = 0.0
+var start_price = 0.0
+var in_deal = false
+
+if not in_deal
+    profit := 0.0 
+
+if random < trade_area and not in_deal
+    in_deal := true
+    start_price := close
+    strategy.entry("long", true)
+   
+if in_deal
+    profit := (close / start_price -1) * 100
+   
+if profit < stop_loss or profit > take_profit
+    strategy.close("long")
+    in_deal := false
